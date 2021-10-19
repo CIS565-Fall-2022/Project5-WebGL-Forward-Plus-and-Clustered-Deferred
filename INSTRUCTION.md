@@ -1,16 +1,29 @@
 WebGL Forward+ and Clustered Deferred Shading - Instructions
 ==========================================================
 
-**This is due Wednesday 10/28**
+**This is due Friday, October 30th at 11:59 PM.**
+
+**Summary:**
+
+In this project, you will implement the Forward+ and Clustered Deferred shading methods as discussed in class. You are given a scene with the Sponza Atrium model and a large number of point lights, as well as a GUI to toggle between the different rendering modes.
+
+## Contents
+- `src/`contains all the Javascript and GLSL code for this project. This contains several subdirectories:
+  - `renderers/` defines the different renderers in which you will implement Forward+ and Clustered Deferred shading.
+  - `shaders/` contains the GLSL files that are interpreted as shader programs at runtime.
+- `models/` contains the Sponza Atrium model used in the test scene.
+- `lib/` includes a minimal GLTF loader to load in the model.
 
 ## Running the code
+
+Follow these steps to install and view the project.
 
 - Clone this repository
 - Download and install [Node.js](https://nodejs.org/en/)
 - Run `npm install` in the root directory of this project. This will download and install dependences
 - Run `npm start` and navigate to [http://localhost:5650](http://localhost:5650)
 
-This project requires a WebGL-capable browser with support for several extensions. You can check for support on [WebGL Report](http://webglreport.com/):
+This project requires a WebGL-capable browser with support for several extensions. You can check that your browser supports them on [WebGL Report](http://webglreport.com/):
 - OES_texture_float
 - OES_texture_float_linear
 - OES_element_index_uint
@@ -21,11 +34,11 @@ This project requires a WebGL-capable browser with support for several extension
 Google Chrome seems to work best on all platforms. If you have problems running the starter code, use Chrome or Chromium, and make sure you have updated your browser and video drivers.
 
 `npm start` launches a script that continuously rebuilds your code when you make changes and serves it for access via your web browser.
-On some linux systems, you may see warnings like `Error: ENOSPC: System limit for number of file watchers reached`, which may prevent automatic rebuilding from working properly.
+On some Linux systems, you may see warnings like `Error: ENOSPC: System limit for number of file watchers reached`, which may prevent automatic rebuilding from working properly.
 You may be able to resolve this by following the instructions here: https://code.visualstudio.com/docs/setup/linux#_visual-studio-code-is-unable-to-watch-for-file-changes-in-this-large-workspace-error-enospc
 
 ## Requirements
-**Ask on the mailing list for any clarifications**
+**Ask on Piazza for any clarifications.**
 
 In this project, you are given code for:
 - Loading glTF models
@@ -34,9 +47,9 @@ In this project, you are given code for:
 - Partial implementation and setup for Forward+ and Deferred shading using 3D light clusters.
 - Many helpful helpers
 
-## Required Tasks
+### Part 1: Implement the different rendering methods
 
-**Before doing performance analysis**, you must disable debug mode by changing `DEBUG` to false in `src/init.js`. Keep it enabled when developing - it helps find WebGL errors *much* more easily.
+Based on the discussions in lecture and recitation, you are expected to implement the Forward+ and Clustered Deferred rendering methods and analyze their results. Here is a summary of both methods:
 
 **Forward+**
   - Build a data structure to keep track of how many lights are in each cluster and what their indices are
@@ -47,33 +60,32 @@ In this project, you are given code for:
   - Store vertex attributes in g-buffer
   - Read g-buffer in a shader to produce final output
 
-**Effects**
+### Part 2: Effects and Optimizations
+
+**Effects**: Choose one of the following effects to implement. (Or do multiple for extra credit!) 
 - Implement deferred Blinn-Phong shading (diffuse + specular) for point lights
 - OR
-- Implement one of the following effects:
+- Implement one of the following post-processing effects:
   - Bloom using post-process blur (box or Gaussian)
   - Toon shading (with ramp shading + simple depth-edge detection for outlines)
 
-**Optimizations**
-  - Optimized g-buffer format - reduce the number and size of g-buffers:
-    - Ideas:
-      - Pack values together into vec4s
-      - Use 2-component normals
-      - Quantize values by using smaller texture types instead of gl.FLOAT
-      - Reduce number of properties passed via g-buffer, e.g. by:
-        - Reconstructing world space position using camera matrices and X/Y/depth
-    - For credit, you must show a good optimization effort and record the performance of each version you test, in a simple table.
-      - It is expected that you won't need all 4 provided g-buffers for a basic pipeline make sure you disable the unused ones.
+**Optimizations**: We ask that you optimize the g-buffers used for this renderer. In particular, aim to reduce the number of them used and/or their size. Some ideas to get you started:
+- Pack values together into vec4s
+- Use 2-component normals
+- Quantize values by using smaller texture types instead of gl.FLOAT
+- Reduce number of properties passed via g-buffer, e.g. by: reconstructing world space position using camera matrices and X/Y/depth
+ 
+ For credit, you must show a good optimization effort and record the performance of each version you test, in a simple table. It is expected that you won't need all 4 provided g-buffers for a basic pipeline. Make sure you disable the unused ones.
 
 ## Performance & Analysis
+
+**Before doing performance analysis**, you must disable debug mode by changing `DEBUG` to false in `src/init.js`. Keep it enabled when developing - it helps find WebGL errors *much* more easily.
 
 Compare your implementations of Forward+ and Clustered Deferred shading and analyze their differences.
   - Is one of them faster?
   - Is one of them better at certain types of workloads?
   - What are the benefits and tradeoffs of using one over the other?
   - For any differences in performance, briefly explain what may be causing the difference.
-
-**Before doing performance analysis**, you must disable debug mode by changing `DEBUG` to false in `src/init.js`. Keep it enabled when developing - it helps find WebGL errors *much* more easily.
 
 Optimize your JavaScript and/or GLSL code. Chrome/Firefox's profiling tools (see Resources section) will be useful for this. For each change that improves performance, show the before and after render times.
 
@@ -151,7 +163,7 @@ Replace the contents of the README.md in a clear manner with the following:
 - Performance analysis (described above)
 
 **GitHub Pages**
-Since this assignment is in WebGL, you can make your project easily viewable by taking advantage of GitHub's project pages feature.
+Since this assignment is in WebGL, you can (and should) make your project easily viewable by taking advantage of GitHub's project pages feature.
 
 Once you are done with the assignment, create a new branch:
 
@@ -169,8 +181,6 @@ Push the branch to GitHub:
 Now, you can go to `<user_name>.github.io/<project_name>` to see your renderer online from anywhere. Add this link to your README.
 
 ## Submit
-
-Beware of any build issues discussed on the Google Group.
 
 Open a GitHub pull request so that we can see that you have finished. The title should be "Project 5B: YOUR NAME". The template of the comment section of your pull request is attached below, you can do some copy and paste:
 
