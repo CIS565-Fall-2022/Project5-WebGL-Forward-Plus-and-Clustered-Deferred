@@ -60,7 +60,11 @@ module.exports = function(env, argv) {
     },
     devtool: 'source-map',
     devServer: {
-      port: 5650
+      port: 5650,
+      static: {
+        directory: path.join(__dirname, 'models'),
+        publicPath: '/models',
+      },
     },
   };
 };
