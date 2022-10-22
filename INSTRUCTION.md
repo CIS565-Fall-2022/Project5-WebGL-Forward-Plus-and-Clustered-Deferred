@@ -1,7 +1,7 @@
 WebGL Forward+ and Clustered Deferred Shading - Instructions
 ==========================================================
 
-**This is due Saturday, October 31th at 11:59 PM.**
+**This is due Sunday, October 30th at 11:59 PM.**
 
 **Summary:**
 
@@ -38,7 +38,7 @@ On some Linux systems, you may see warnings like `Error: ENOSPC: System limit fo
 You may be able to resolve this by following the instructions here: https://code.visualstudio.com/docs/setup/linux#_visual-studio-code-is-unable-to-watch-for-file-changes-in-this-large-workspace-error-enospc
 
 ## Requirements
-**Ask on Piazza for any clarifications.**
+**Ask on Ed Discussion for any clarifications.**
 
 In this project, you are given code for:
 - Loading glTF models
@@ -113,20 +113,14 @@ Initialization happens in `src/init.js`. You don't need to worry about this; it 
 
 `src/main.js` is configuration for the renderers. It sets up the gui for switching renderers and initializes the scene and render loop. The most important things here are the arguments for `ForwardPlusRenderer` and `ClusteredRenderer`. These constructors take the number of x, y, and z slices to split the frustum into.
 
-We have also provided a `Wireframe` helper class for debugging.
-It lets you draw arbitrary colored line segments in the scene, which may be 
-helpful for visualizing things like frustum clusters.
-For example, on app startup you could populate the `Wireframe` with lines for
-the clusters based on the initial camera view, and then you can pan around the
-scene to inspect the clusters.
-We've provided an example in `src/main.js` for drawing lines on top of everything in the scene, but you can also draw them so that they depth test properly with the rest of the scene.
-Feel free to modify this class as you see fit.
-**Before doing performance analysis**, be sure to disable wireframe drawing,
-especially if you have made significant modifications that may impact performance.
+We have also provided a `Wireframe` helper class for debugging. It lets you draw arbitrary colored line segments in the scene, which may be helpful for visualizing things like frustum clusters. For example, on app startup you could populate the `Wireframe` with lines for the clusters based on the initial camera view, and then you can pan around the scene to inspect the clusters.
+
+We've provided an example in `src/main.js` for drawing lines on top of everything in the scene, but you can also draw them so that they depth test properly with the rest of the scene. Feel free to modify this class as you see fit. **Before doing performance analysis**, be sure to disable wireframe drawing, especially if you have made significant modifications that may impact performance.
 
 `src/scene.js` handles loading a .gltf scene and initializes the lights. Here, you can modify the number of lights, their positions, and how they move around. Also, take a look at the `draw` function. This handles binding the vertex attributes, which are hardcoded to `a_position`, `a_normal`, and `a_uv`, as well as the color and normal maps to targets `gl.TEXTURE0` and `gl.TEXTURE1`.
 
 **Simple Forward Shading Pipeline**
+
 There is a simple forward shading pipeline as an example for how everything works. Check out `src/forward.js`.
 
 The constructor for the renderer initializes a `TextureBuffer` to store the lights. This isn't totally necessary for a forward renderer, but you'll need this to implement light clusters. What we're trying to do here is upload to a shader all the positions of our lights. However, we unfortunately can't upload arbitrary data to the GPU with WebGL so we have to pack it as a texture. This is set up for you.
@@ -140,6 +134,7 @@ Look again at the constructor of `ForwardRenderer`. Also initialized here is the
 Now go look inside `src/shaders/forward.frag.glsl.js`. Here, there is a simple loop which loops over the lights and applies shading for each one. There is a helper `UnpackLight(index)` which unpacks the `index`th light from the texture into a struct. Make sure you fully understand how this is working because you will need to implement something similar for clusters. Inside `UnpackLight` there is another helper called `ExtractFloat(texture, textureWidth, textureHeight, index, component)`. This pulls out the `component`th component from the `index`th value packed inside a `textureWidth x textureHeight` texture. Again, this is meant to be an example implementation. Using this function to pull out four values into a `vec4` will be unecessarily slow.
 
 **Getting Started**
+
 Here's a few tips to get you started.
 
 1. Complete `updateClusters` in `src/renderers/base.js`. This should update the cluster `TextureBuffer` with a mapping from cluster index to light count and light list (indices).
@@ -163,6 +158,7 @@ Replace the contents of the README.md in a clear manner with the following:
 - Performance analysis (described above)
 
 **GitHub Pages**
+
 Since this assignment is in WebGL, you can (and should) make your project easily viewable by taking advantage of GitHub's project pages feature.
 
 Once you are done with the assignment, create a new branch:
