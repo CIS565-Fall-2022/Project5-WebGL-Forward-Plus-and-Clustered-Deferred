@@ -53,7 +53,7 @@ gl.enable(gl.DEPTH_TEST);
 
 function render() {
   scene.update();  
-  params._renderer.render(camera, scene);
+  params._renderer.render(camera, scene, wireframe);
 
   // LOOK: Render wireframe "in front" of everything else.
   // If you would like the wireframe to render behind and in front

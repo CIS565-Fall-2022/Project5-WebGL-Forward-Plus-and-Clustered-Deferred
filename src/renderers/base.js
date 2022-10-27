@@ -1,17 +1,11 @@
 import TextureBuffer from './textureBuffer';
+import {vec3, vec4} from 'gl-matrix';
 
 export const MAX_LIGHTS_PER_CLUSTER = 100;
 
-// Class to represent one subdivision of camera frustum
-export class SubFrustum {
-  constructor() {
-
-  }
-
-  // Check for intersection with frustum and light
-  intersectWithLight(lightIdx) {
-    return true;
-  }
+function clampClusterIndex(val, min, max)
+{
+  return Math.min(Math.max(min, val), max);
 }
 
 export default class BaseRenderer {
@@ -24,12 +18,11 @@ export default class BaseRenderer {
     this._zSlices = zSlices;
   }
 
-  updateClusters(camera, viewMatrix, scene) {
+  updateClusters(camera, viewMatrix, scene, wireframe) {
     // TODO: Update the cluster texture with the count and indices of the lights in each cluster
     // This will take some time. The math is nontrivial...
 
-    let zDepth = camera.far / this._zSlices;
-    // TODO: how to get camera attributes?
+    //console.log("Number scene lights: ", scene.lights.length);
 
     // Each x, y, z represents one cluster
     for (let z = 0; z < this._zSlices; ++z) {
@@ -39,38 +32,93 @@ export default class BaseRenderer {
           let i = x + y * this._xSlices + z * this._xSlices * this._ySlices;
           // Reset the light count to 0 for every cluster
           this._clusterTexture.buffer[this._clusterTexture.bufferIndex(i, 0)] = 0;
+        }
+      }
+    }
 
-          // Compute sub-frustum
-          // TODO: calculate six planes of frustum and store in SubFrustum class object
-          let subFrustrum = new SubFrustum();
+    // For each light, figure out which clusters it overlaps
+    // For each cluster, add this light to its light count and light list
+    for (let i = 0; i < 1; ++i) {
+      // STEP 1. Find light position and radius
+      //let lightPos = scene.lights[i].position;
+      let lightPos = vec3.fromValues(1.0, 1.0, 1.0);
+      let lightRadius = scene.lights[i].radius;
+      //console.log("Light pos: ", lightPos, " light radius: ", lightRadius);
 
-          let lightsCount = 0;
-          for (let i = 0; i < scene.lights.length; i++) {
-            // Check for intersection against frustum
-            let intersect = subFrustum.intersectWithLight(i);
+      // STEP 2. Find light's grid index based on its position in world space
+      let gridIndex = vec3.fromValues(Math.floor(lightPos[0]), Math.floor(lightPos[1]), Math.floor(lightPos[2]));
+      //console.log("Grid index: ", gridIndex);
 
-            if (intersect) {
-              // Add to list of light indices
+      // STEP 3. Find bounding box (min and max) of light based on radius
+      let bbMin = vec3.fromValues(lightPos[0] - lightRadius, lightPos[1] - lightRadius, lightPos[2] - lightRadius);
+      let bbMax = vec3.fromValues(lightPos[0] + lightRadius, lightPos[1] + lightRadius, lightPos[2] + lightRadius);
+      //console.log("Bounding box min: ", bbMin);
+      //console.log("Bounding box max: ", bbMax);
+
+      // STEP 4. Transform bounding box (min and max) into view space using viewMatrix
+      let viewBBMin = vec3.create();
+      let viewBBMax = vec3.create();
+      vec3.transformMat4(viewBBMin, bbMin, viewMatrix);
+      vec3.transformMat4(viewBBMax, bbMax, viewMatrix);
+      //console.log("View BB Min: ", viewBBMin);
+      //console.log("View BB Max: ", viewBBMax);
+
+      // STEP 5. Find x, y, z lengths of sub-frustum to project AABB coordinates into clip space 
+      let zNear = -1.0 * viewBBMin[2];
+      let zFar = -1.0 * viewBBMax[2];
+      let zStep = (camera.far - camera.near) / this._zSlices;
+      let tanFov = Math.tan(0.5 * camera.fov * (Math.PI / 180.0));
+
+      let halfYLenNear = zNear * tanFov;
+      let halfXLenNear = halfYLenNear * camera.aspect;
+      //console.log("halfYLenNear", halfYLenNear);
+      //console.log("halfXLenNear", halfXLenNear);
+
+      let halfYLenFar = zFar * tanFov;
+      let halfXLenFar = halfYLenFar * camera.aspect;
+      //console.log("halfYLenFar", halfYLenFar);
+      //console.log("halfXLenFar", halfXLenFar);
+
+      // STEP 6. Calculate min and max cluster indices (clamp to cull objects out of view)
+      let xMin = Math.floor(this._xSlices * ((viewBBMin[0] + halfXLenNear) / (2.0 * halfXLenNear)));
+      let xMax = Math.ceil(this._xSlices * ((viewBBMax[0] + halfXLenFar) / (2.0 * halfXLenFar)));
+      xMin = clampClusterIndex(xMin, 0, this._xSlices - 1);
+      xMax = clampClusterIndex(xMax, 0, this._xSlices - 1);
+
+      let yMin = Math.floor(this._ySlices * ((viewBBMin[1] + halfYLenNear) / (2.0 * halfYLenNear)));
+      let yMax = Math.ceil(this._ySlices * ((viewBBMax[1] + halfYLenFar) / (2.0 * halfYLenFar)));
+      yMin = clampClusterIndex(yMin, 0, this._ySlices - 1);
+      yMax = clampClusterIndex(yMax, 0, this._ySlices - 1);
+
+      let zMin = zNear / zStep;
+      let zMax = zFar / zStep;
+      zMin = clampClusterIndex(zMin, 0, this._xSlices - 1);
+      zMax = clampClusterIndex(zMax, 0, this._xSlices - 1);
+
+      // STEP 6. Iterate over min and max x, y, z frustum coordinates and add light to light count and light indices
+      // Add this information to the clusterTexture - first index will be light count, the following indices will be the lights
+      // Each cluster has ceil(lightsSize / 4) pixels, where each pixel holds 4 float values
+      for (let z = zMin; z < zMax; ++z) {
+        for (let y = yMin; y < yMax; ++y) {
+          for (let x = xMin; x < xMax; ++x) {
+            // Current cluster's 1D index
+            let clusterIdx = x + y * this._xSlices + z * this._xSlices * this._ySlices;
+            // Next available index to add a light
+            let lightIdx = this._clusterTexture.buffer[this._clusterTexture.bufferIndex(clusterIdx, 0)];
+
+            if (lightIdx <= MAX_LIGHTS_PER_CLUSTER) {
+              // Increment light count
+              this._clusterTexture.buffer[this._clusterTexture.bufferIndex(clusterIdx, 0)] += 1;
+
+              // Add light (with index i) to cluster's list of lights
+              let pixelNum = lightIdx / 4;
+              let pixelComponent = lightIdx % 4;
+              this._clusterTexture.buffer[this._clusterTexture.bufferIndex(clusterIdx, pixelNum) + pixelComponent] = i;
             }
           }
         }
       }
     }
-
-    // 
-
-    // STEP 1. Compute clusters (sub-frustums)
-    // 1a. Find zNear and zFar depending on z-slice, and similar calculations in x and y directions
-    // Q1: How to create sub-frustums? We can get the far and near, but how about other planes? 
-    // Q2: How to use viewMatrix to calculate other planes?
-
-    // STEP 2. For each cluster, iterate through all of the lights and check for intersection
-    // Q3: Does "intersection" mean that frustum fully encompasses light? Or is enough if it just overlaps?
-    // Q4: Is this the same as bounding sphere-frustum intersection?
-
-    // STEP 3. If the light intersects the cluster, then add its index to the cluster's list of lights
-    // Add this information to the clusterTexture - first index will be light count, then the follow indices will be 
-    // Keep temp lightsCount variable and continuously increment it; also use this to assign lightIndices
 
     this._clusterTexture.update();
   }
