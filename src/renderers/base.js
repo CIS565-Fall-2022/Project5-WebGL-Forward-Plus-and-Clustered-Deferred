@@ -5,7 +5,7 @@ export const MAX_LIGHTS_PER_CLUSTER = 100;
 
 function clampClusterIndex(val, min, max)
 {
-  return Math.min(Math.max(min, val), max);
+  return Math.min(Math.max(val, min), max);
 }
 
 export default class BaseRenderer {
@@ -16,6 +16,8 @@ export default class BaseRenderer {
     this._xSlices = xSlices;
     this._ySlices = ySlices;
     this._zSlices = zSlices;
+    this._elementCount = xSlices * ySlices * zSlices;
+    this._elementSize = Math.ceil((MAX_LIGHTS_PER_CLUSTER + 1) / 4);
   }
 
   updateClusters(camera, viewMatrix, scene, wireframe) {
@@ -38,24 +40,20 @@ export default class BaseRenderer {
 
     // For each light, figure out which clusters it overlaps
     // For each cluster, add this light to its light count and light list
-    for (let i = 0; i < 1; ++i) {
+    for (let i = 0; i < scene.lights.length; ++i) {
       // STEP 1. Find light position and radius
-      //let lightPos = scene.lights[i].position;
-      let lightPos = vec3.fromValues(1.0, 1.0, 1.0);
+      let lightPos = scene.lights[i].position;
+      //let lightPos = vec3.fromValues(1.0, 1.0, 1.0);
       let lightRadius = scene.lights[i].radius;
       //console.log("Light pos: ", lightPos, " light radius: ", lightRadius);
 
-      // STEP 2. Find light's grid index based on its position in world space
-      let gridIndex = vec3.fromValues(Math.floor(lightPos[0]), Math.floor(lightPos[1]), Math.floor(lightPos[2]));
-      //console.log("Grid index: ", gridIndex);
-
-      // STEP 3. Find bounding box (min and max) of light based on radius
+      // STEP 2. Find bounding box (min and max) of light based on radius
       let bbMin = vec3.fromValues(lightPos[0] - lightRadius, lightPos[1] - lightRadius, lightPos[2] - lightRadius);
       let bbMax = vec3.fromValues(lightPos[0] + lightRadius, lightPos[1] + lightRadius, lightPos[2] + lightRadius);
       //console.log("Bounding box min: ", bbMin);
       //console.log("Bounding box max: ", bbMax);
 
-      // STEP 4. Transform bounding box (min and max) into view space using viewMatrix
+      // STEP 3. Transform bounding box (min and max) into view space using viewMatrix
       let viewBBMin = vec3.create();
       let viewBBMax = vec3.create();
       vec3.transformMat4(viewBBMin, bbMin, viewMatrix);
@@ -63,7 +61,7 @@ export default class BaseRenderer {
       //console.log("View BB Min: ", viewBBMin);
       //console.log("View BB Max: ", viewBBMax);
 
-      // STEP 5. Find x, y, z lengths of sub-frustum to project AABB coordinates into clip space 
+      // STEP 4. Find x, y, z lengths of sub-frustum to project AABB coordinates into clip space 
       let zNear = -1.0 * viewBBMin[2];
       let zFar = -1.0 * viewBBMax[2];
       let zStep = (camera.far - camera.near) / this._zSlices;
@@ -79,21 +77,24 @@ export default class BaseRenderer {
       //console.log("halfYLenFar", halfYLenFar);
       //console.log("halfXLenFar", halfXLenFar);
 
-      // STEP 6. Calculate min and max cluster indices (clamp to cull objects out of view)
+      // STEP 5. Calculate min and max cluster indices (clamp to cull objects out of view)
       let xMin = Math.floor(this._xSlices * ((viewBBMin[0] + halfXLenNear) / (2.0 * halfXLenNear)));
       let xMax = Math.ceil(this._xSlices * ((viewBBMax[0] + halfXLenFar) / (2.0 * halfXLenFar)));
       xMin = clampClusterIndex(xMin, 0, this._xSlices - 1);
       xMax = clampClusterIndex(xMax, 0, this._xSlices - 1);
+      //console.log("x: ", xMin, xMax);
 
       let yMin = Math.floor(this._ySlices * ((viewBBMin[1] + halfYLenNear) / (2.0 * halfYLenNear)));
       let yMax = Math.ceil(this._ySlices * ((viewBBMax[1] + halfYLenFar) / (2.0 * halfYLenFar)));
       yMin = clampClusterIndex(yMin, 0, this._ySlices - 1);
       yMax = clampClusterIndex(yMax, 0, this._ySlices - 1);
+      //console.log("y: ", yMin, yMax);
 
-      let zMin = zNear / zStep;
-      let zMax = zFar / zStep;
-      zMin = clampClusterIndex(zMin, 0, this._xSlices - 1);
-      zMax = clampClusterIndex(zMax, 0, this._xSlices - 1);
+      let zMin = Math.floor(zNear / zStep);
+      let zMax = Math.ceil(zFar / zStep);
+      zMin = clampClusterIndex(zMin, 0, this._zSlices - 1);
+      zMax = clampClusterIndex(zMax, 0, this._zSlices - 1);
+      //console.log("z: ", zMin, zMax);
 
       // STEP 6. Iterate over min and max x, y, z frustum coordinates and add light to light count and light indices
       // Add this information to the clusterTexture - first index will be light count, the following indices will be the lights
@@ -103,16 +104,19 @@ export default class BaseRenderer {
           for (let x = xMin; x < xMax; ++x) {
             // Current cluster's 1D index
             let clusterIdx = x + y * this._xSlices + z * this._xSlices * this._ySlices;
+
+            // Increment light count
+            this._clusterTexture.buffer[this._clusterTexture.bufferIndex(clusterIdx, 0)] += 1;
+
             // Next available index to add a light
             let lightIdx = this._clusterTexture.buffer[this._clusterTexture.bufferIndex(clusterIdx, 0)];
+            //console.log(lightIdx);
 
             if (lightIdx <= MAX_LIGHTS_PER_CLUSTER) {
-              // Increment light count
-              this._clusterTexture.buffer[this._clusterTexture.bufferIndex(clusterIdx, 0)] += 1;
-
               // Add light (with index i) to cluster's list of lights
-              let pixelNum = lightIdx / 4;
-              let pixelComponent = lightIdx % 4;
+              let pixelNum = Math.floor(lightIdx / 4);
+              let pixelComponent = Math.floor(lightIdx % 4);
+              //console.log(pixelComponent);
               this._clusterTexture.buffer[this._clusterTexture.bufferIndex(clusterIdx, pixelNum) + pixelComponent] = i;
             }
           }

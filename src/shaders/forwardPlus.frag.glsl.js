@@ -5,12 +5,21 @@ export default function(params) {
   #version 100
   precision highp float;
 
+  //#define VISUALIZE_CLUSTERS
+
+  uniform mat4 u_viewProjectionMatrix;
+  uniform mat4 u_viewMatrix;
+
   uniform sampler2D u_colmap;
   uniform sampler2D u_normap;
   uniform sampler2D u_lightbuffer;
 
   // TODO: Read this buffer to determine the lights influencing a cluster
   uniform sampler2D u_clusterbuffer;
+
+  uniform vec2 u_clusterdims;
+  uniform vec3 u_slices;
+  uniform vec2 u_screendims;
 
   varying vec3 v_position;
   varying vec3 v_normal;
@@ -80,9 +89,26 @@ export default function(params) {
     vec3 normal = applyNormalMap(v_normal, normap);
 
     vec3 fragColor = vec3(0.0);
+    vec3 viewPos = (u_viewProjectionMatrix * vec4(v_position, 1.0)).xyz;
 
-    for (int i = 0; i < ${params.numLights}; ++i) {
-      Light light = UnpackLight(i);
+    // Get cluster index of current fragment
+    int clusterX = int(u_slices.x * (gl_FragCoord.x / u_screendims.x));
+    int clusterY = int(u_slices.y * (gl_FragCoord.y / u_screendims.y));
+    int clusterZ = int(u_slices.z * (viewPos.z / (1000.0 - 0.1)));
+
+    int clusterIndex = clusterX + clusterY * int(u_slices.x) + clusterZ * int(u_slices.x) * int(u_slices.y);
+    int clusterLightsCount = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, 0));
+
+    for (int i = 0; i < ${params.maxClusterLights}; ++i) {
+      if (i > clusterLightsCount) break;
+
+      // Get light index
+      int lightIdx = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, i + 1));
+
+      // Unpack light info
+      Light light = UnpackLight(lightIdx);
+      
+      // Do Lambertian shading
       float lightDistance = distance(light.position, v_position);
       vec3 L = (light.position - v_position) / lightDistance;
 
@@ -92,8 +118,25 @@ export default function(params) {
       fragColor += albedo * lambertTerm * light.color * vec3(lightIntensity);
     }
 
+    /*for (int i = 0; i < ${params.numLights}; ++i) {
+      Light light = UnpackLight(i);
+      float lightDistance = distance(light.position, v_position);
+      vec3 L = (light.position - v_position) / lightDistance;
+
+      float lightIntensity = cubicGaussian(2.0 * lightDistance / light.radius);
+      float lambertTerm = max(dot(L, normal), 0.0);
+
+      fragColor += albedo * lambertTerm * light.color * vec3(lightIntensity);
+    }*/
+
     const vec3 ambientLight = vec3(0.025);
     fragColor += albedo * ambientLight;
+
+#ifdef VISUALIZE_CLUSTERS
+    //fragColor += vec3(float(clusterX) / u_slices.x, 0.0, 0.0);
+    //fragColor += vec3(0.0, float(clusterY) / u_slices.y, 0.0);
+    fragColor += vec3(0.0, 0.0, float(clusterZ) / u_slices.z);
+#endif
 
     gl_FragColor = vec4(fragColor, 1.0);
   }
