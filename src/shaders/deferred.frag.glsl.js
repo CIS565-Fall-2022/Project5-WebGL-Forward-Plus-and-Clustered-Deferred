@@ -2,9 +2,16 @@ export default function(params) {
   return `
   #version 100
   precision highp float;
+
+  uniform mat4 u_viewMatrix;
   
+  uniform sampler2D u_clusterbuffer;
   uniform sampler2D u_lightbuffer;
   uniform sampler2D u_gbuffers[${params.numGBuffers}];
+  
+  uniform vec2 u_clusterdims;
+  uniform vec2 u_screendims;
+  uniform vec3 u_slices;
   
   varying vec2 v_uv;
 
@@ -70,11 +77,28 @@ export default function(params) {
     vec3 normColor = 0.5 * (gb1.xyz + vec3(1.0));
     vec3 albedo = gb2.xyz;
 
+    // Get cluster index of current fragment
+    vec3 viewPos = (u_viewMatrix * vec4(gb0.xyz, 1.0)).xyz;
+    int clusterX = int(u_slices.x * (gl_FragCoord.x / u_screendims.x));
+    int clusterY = int(u_slices.y * (gl_FragCoord.y / u_screendims.y));
+    int clusterZ = int(u_slices.z * (viewPos.z / (1000.0 - 0.1)));
+
+    int clusterIndex = clusterX + clusterY * int(u_slices.x) + clusterZ * int(u_slices.x) * int(u_slices.y);
+    int clusterLightsCount = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, 0));
+
     // Do lighting
     vec3 fragColor = vec3(0.0);
 
-    for (int i = 0; i < ${params.numLights}; ++i) {
-      Light light = UnpackLight(i);
+    for (int i = 0; i < ${params.maxClusterLights}; ++i) {
+      if (i > clusterLightsCount) break;
+
+      // Get light index
+      int lightIdx = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, i + 1));
+
+      // Unpack light info
+      Light light = UnpackLight(lightIdx);
+
+      // Do Lambertian shading
       float lightDistance = distance(light.position, gb0.xyz);
       vec3 L = (light.position - gb0.xyz) / lightDistance;
 
