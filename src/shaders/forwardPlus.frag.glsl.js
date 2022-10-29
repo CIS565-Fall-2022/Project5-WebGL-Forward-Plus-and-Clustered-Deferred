@@ -89,7 +89,7 @@ export default function(params) {
     vec3 normal = applyNormalMap(v_normal, normap);
 
     vec3 fragColor = vec3(0.0);
-    vec3 viewPos = (u_viewProjectionMatrix * vec4(v_position, 1.0)).xyz;
+    vec3 viewPos = (u_viewMatrix * vec4(v_position, 1.0)).xyz;
 
     // Get cluster index of current fragment
     int clusterX = int(u_slices.x * (gl_FragCoord.x / u_screendims.x));

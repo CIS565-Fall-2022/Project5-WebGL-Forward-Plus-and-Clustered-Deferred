@@ -80,20 +80,20 @@ export default class BaseRenderer {
       // STEP 5. Calculate min and max cluster indices (clamp to cull objects out of view)
       let xMin = Math.floor(this._xSlices * ((viewBBMin[0] + halfXLenNear) / (2.0 * halfXLenNear)));
       let xMax = Math.ceil(this._xSlices * ((viewBBMax[0] + halfXLenFar) / (2.0 * halfXLenFar)));
-      xMin = clampClusterIndex(xMin, 0, this._xSlices - 1);
-      xMax = clampClusterIndex(xMax, 0, this._xSlices - 1);
+      xMin = clampClusterIndex(xMin, 0, this._xSlices);
+      xMax = clampClusterIndex(xMax, 0, this._xSlices);
       //console.log("x: ", xMin, xMax);
 
       let yMin = Math.floor(this._ySlices * ((viewBBMin[1] + halfYLenNear) / (2.0 * halfYLenNear)));
       let yMax = Math.ceil(this._ySlices * ((viewBBMax[1] + halfYLenFar) / (2.0 * halfYLenFar)));
-      yMin = clampClusterIndex(yMin, 0, this._ySlices - 1);
-      yMax = clampClusterIndex(yMax, 0, this._ySlices - 1);
+      yMin = clampClusterIndex(yMin, 0, this._ySlices);
+      yMax = clampClusterIndex(yMax, 0, this._ySlices);
       //console.log("y: ", yMin, yMax);
 
       let zMin = Math.floor(zNear / zStep);
       let zMax = Math.ceil(zFar / zStep);
-      zMin = clampClusterIndex(zMin, 0, this._zSlices - 1);
-      zMax = clampClusterIndex(zMax, 0, this._zSlices - 1);
+      zMin = clampClusterIndex(zMin, 0, this._zSlices);
+      zMax = clampClusterIndex(zMax, 0, this._zSlices);
       //console.log("z: ", zMin, zMax);
 
       // STEP 6. Iterate over min and max x, y, z frustum coordinates and add light to light count and light indices
