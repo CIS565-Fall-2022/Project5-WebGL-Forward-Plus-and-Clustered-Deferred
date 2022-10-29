@@ -1,7 +1,7 @@
 import TextureBuffer from './textureBuffer';
 import {vec3, vec4} from 'gl-matrix';
 
-export const MAX_LIGHTS_PER_CLUSTER = 100;
+export const MAX_LIGHTS_PER_CLUSTER = 500;
 
 function clampClusterIndex(val, min, max)
 {
@@ -17,7 +17,7 @@ export default class BaseRenderer {
     this._ySlices = ySlices;
     this._zSlices = zSlices;
     this._elementCount = xSlices * ySlices * zSlices;
-    this._elementSize = Math.ceil((MAX_LIGHTS_PER_CLUSTER + 1) / 4);
+    this._elementSize = Math.ceil((MAX_LIGHTS_PER_CLUSTER + 1.0) / 4.0);
   }
 
   updateClusters(camera, viewMatrix, scene, wireframe) {
@@ -78,14 +78,14 @@ export default class BaseRenderer {
       //console.log("halfXLenFar", halfXLenFar);
 
       // STEP 5. Calculate min and max cluster indices (clamp to cull objects out of view)
-      let xMin = Math.floor(this._xSlices * ((viewBBMin[0] + halfXLenNear) / (2.0 * halfXLenNear)));
-      let xMax = Math.ceil(this._xSlices * ((viewBBMax[0] + halfXLenFar) / (2.0 * halfXLenFar)));
+      let xMin = Math.floor(viewBBMin[0] + (this._xSlices *  halfXLenNear) / (2.0 * halfXLenNear));
+      let xMax = Math.ceil(viewBBMax[0] +  (this._xSlices * halfXLenFar) / (2.0 * halfXLenFar));
       xMin = clampClusterIndex(xMin, 0, this._xSlices);
       xMax = clampClusterIndex(xMax, 0, this._xSlices);
       //console.log("x: ", xMin, xMax);
 
-      let yMin = Math.floor(this._ySlices * ((viewBBMin[1] + halfYLenNear) / (2.0 * halfYLenNear)));
-      let yMax = Math.ceil(this._ySlices * ((viewBBMax[1] + halfYLenFar) / (2.0 * halfYLenFar)));
+      let yMin = Math.floor(viewBBMin[1] + (this._ySlices * halfYLenNear) / (2.0 * halfYLenNear));
+      let yMax = Math.ceil(viewBBMax[1] + (this._ySlices * halfYLenFar) / (2.0 * halfYLenFar));
       yMin = clampClusterIndex(yMin, 0, this._ySlices);
       yMax = clampClusterIndex(yMax, 0, this._ySlices);
       //console.log("y: ", yMin, yMax);

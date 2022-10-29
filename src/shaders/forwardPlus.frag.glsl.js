@@ -6,6 +6,7 @@ export default function(params) {
   precision highp float;
 
   //#define VISUALIZE_CLUSTERS
+  #define PI 3.1415926535897932384626433832795
 
   uniform mat4 u_viewProjectionMatrix;
   uniform mat4 u_viewMatrix;
@@ -18,8 +19,11 @@ export default function(params) {
   uniform sampler2D u_clusterbuffer;
 
   uniform vec2 u_clusterdims;
-  uniform vec3 u_slices;
   uniform vec2 u_screendims;
+  uniform vec3 u_slices;
+  uniform float u_fov;
+  uniform float u_aspect;
+  uniform float u_clipDist;
 
   varying vec3 v_position;
   varying vec3 v_normal;
@@ -92,15 +96,21 @@ export default function(params) {
     vec3 viewPos = (u_viewMatrix * vec4(v_position, 1.0)).xyz;
 
     // Get cluster index of current fragment
-    int clusterX = int(u_slices.x * (gl_FragCoord.x / u_screendims.x));
-    int clusterY = int(u_slices.y * (gl_FragCoord.y / u_screendims.y));
-    int clusterZ = int(u_slices.z * (viewPos.z / (1000.0 - 0.1)));
+    float tanFov = tan(0.5 * u_fov * (PI / 180.0));
+    float halfYLen = viewPos.z * tanFov;
+    float halfXLen = halfYLen * u_aspect;
+    int clusterX = int(viewPos.x + (u_slices.x * halfXLen) / (2.0 * halfXLen));
+    int clusterY = int(viewPos.y + (u_slices.y * halfYLen) / (2.0 * halfYLen));
+
+    //int clusterX = int(u_slices.x * (gl_FragCoord.x / u_screendims.x));
+    //int clusterY = int(u_slices.y * (gl_FragCoord.y / u_screendims.y));
+    int clusterZ = int(u_slices.z * (viewPos.z / u_clipDist));
 
     int clusterIndex = clusterX + clusterY * int(u_slices.x) + clusterZ * int(u_slices.x) * int(u_slices.y);
     int clusterLightsCount = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, 0));
 
     for (int i = 0; i < ${params.maxClusterLights}; ++i) {
-      if (i > clusterLightsCount) break;
+      if (i >= clusterLightsCount) break;
 
       // Get light index
       int lightIdx = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, i + 1));

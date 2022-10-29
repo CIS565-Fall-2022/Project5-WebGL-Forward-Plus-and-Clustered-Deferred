@@ -18,7 +18,7 @@ export default class ForwardPlusRenderer extends BaseRenderer {
       numLights: NUM_LIGHTS,
       maxClusterLights: MAX_LIGHTS_PER_CLUSTER,
     }), {
-      uniforms: ['u_viewProjectionMatrix', 'u_viewMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer', 'u_clusterdims', 'u_slices', 'u_screendims'],
+      uniforms: ['u_viewProjectionMatrix', 'u_viewMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer', 'u_clusterdims', 'u_slices', 'u_screendims', 'u_fov', 'u_aspect', 'u_clipDist'],
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
@@ -80,6 +80,9 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     gl.uniform1i(this._shaderProgram.u_clusterbuffer, 3);
 
     // TODO: Bind any other shader inputs
+    gl.uniform1f(this._shaderProgram.u_fov, camera.fov);
+    gl.uniform1f(this._shaderProgram.u_aspect, camera.aspect);
+    gl.uniform1f(this._shaderProgram.u_clipDist, camera.far - camera.near);
     gl.uniform2fv(this._shaderProgram.u_clusterdims, vec2.fromValues(this._elementCount, this._elementSize));
     gl.uniform3fv(this._shaderProgram.u_slices, vec3.fromValues(this._xSlices, this._ySlices, this._zSlices));
     gl.uniform2fv(this._shaderProgram.u_screendims, vec2.fromValues(canvas.width, canvas.height));

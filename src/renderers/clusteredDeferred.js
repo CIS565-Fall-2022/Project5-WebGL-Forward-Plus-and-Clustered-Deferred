@@ -31,7 +31,7 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       maxClusterLights: MAX_LIGHTS_PER_CLUSTER,
     }), {
       uniforms: ['u_viewMatrix', 'u_clusterbuffer', 'u_lightbuffer', 'u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
-                'u_clusterdims', 'u_screendims', 'u_slices'],
+                'u_clusterdims', 'u_screendims', 'u_slices', 'u_fov', 'u_aspect', 'u_clipDist'],
       attribs: ['a_uv'],
     });
 
@@ -172,6 +172,12 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       gl.uniform1i(this._progShade[`u_gbuffers[${i}]`], i + firstGBufferBinding);
     }
 
+    // Upload view matrix
+    gl.uniformMatrix4fv(this._progShade.u_viewMatrix, false, this._viewMatrix);
+
+    gl.uniform1f(this._progShade.u_fov, camera.fov);
+    gl.uniform1f(this._progShade.u_aspect, camera.aspect);
+    gl.uniform1f(this._progShade.u_clipDist, camera.far - camera.near);
     gl.uniform2fv(this._progShade.u_clusterdims, vec2.fromValues(this._elementCount, this._elementSize));
     gl.uniform3fv(this._progShade.u_slices, vec3.fromValues(this._xSlices, this._ySlices, this._zSlices));
     gl.uniform2fv(this._progShade.u_screendims, vec2.fromValues(canvas.width, canvas.height));

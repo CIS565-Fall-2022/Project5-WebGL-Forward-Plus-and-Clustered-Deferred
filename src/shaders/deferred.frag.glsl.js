@@ -3,6 +3,8 @@ export default function(params) {
   #version 100
   precision highp float;
 
+  #define PI 3.1415926535897932384626433832795
+
   uniform mat4 u_viewMatrix;
   
   uniform sampler2D u_clusterbuffer;
@@ -12,6 +14,9 @@ export default function(params) {
   uniform vec2 u_clusterdims;
   uniform vec2 u_screendims;
   uniform vec3 u_slices;
+  uniform float u_fov;
+  uniform float u_aspect;
+  uniform float u_clipDist;
   
   varying vec2 v_uv;
 
@@ -70,7 +75,7 @@ export default function(params) {
     vec4 gb0 = texture2D(u_gbuffers[0], v_uv); // position
     vec4 gb1 = texture2D(u_gbuffers[1], v_uv); // normal
     vec4 gb2 = texture2D(u_gbuffers[2], v_uv); // albedo
-    vec4 gb3 = texture2D(u_gbuffers[3], v_uv); // nothing
+    vec4 gb3 = texture2D(u_gbuffers[3], v_uv); // nothing (specular intensity float)
 
     // Values for visualizing G-Buffer values
     vec3 posColor = gb0.xyz * 0.05;
@@ -79,18 +84,29 @@ export default function(params) {
 
     // Get cluster index of current fragment
     vec3 viewPos = (u_viewMatrix * vec4(gb0.xyz, 1.0)).xyz;
-    int clusterX = int(u_slices.x * (gl_FragCoord.x / u_screendims.x));
-    int clusterY = int(u_slices.y * (gl_FragCoord.y / u_screendims.y));
-    int clusterZ = int(u_slices.z * (viewPos.z / (1000.0 - 0.1)));
+    float tanFov = tan(0.5 * u_fov * (PI / 180.0));
+    float halfYLen = viewPos.z * tanFov;
+    float halfXLen = halfYLen * u_aspect;
+    int clusterX = int(viewPos.x + (u_slices.x * halfXLen) / (2.0 * halfXLen));
+    int clusterY = int(viewPos.y + (u_slices.y * halfYLen) / (2.0 * halfYLen));
+
+    //int clusterX = int(u_slices.x * (gl_FragCoord.x / u_screendims.x));
+    //int clusterY = int(u_slices.y * (gl_FragCoord.y / u_screendims.y));
+    int clusterZ = int(u_slices.z * (viewPos.z / u_clipDist));
 
     int clusterIndex = clusterX + clusterY * int(u_slices.x) + clusterZ * int(u_slices.x) * int(u_slices.y);
     int clusterLightsCount = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, 0));
+
+    /*if (clusterLightsCount == 0) {
+      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+      return;
+    }*/
 
     // Do lighting
     vec3 fragColor = vec3(0.0);
 
     for (int i = 0; i < ${params.maxClusterLights}; ++i) {
-      if (i > clusterLightsCount) break;
+      if (i >= clusterLightsCount) break;
 
       // Get light index
       int lightIdx = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, i + 1));
