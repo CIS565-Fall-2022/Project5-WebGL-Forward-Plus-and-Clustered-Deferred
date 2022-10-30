@@ -42,6 +42,4 @@ void main() {
     // Populate g-buffer
     gl_FragData[0] = vec4(depth, encodedNorm.x, encodedNorm.y, specExponent);
     gl_FragData[1] = vec4(col, 0.0);
-    gl_FragData[2] = vec4(0.0); // unused (TODO: disable)
-    gl_FragData[3] = vec4(0.0); // unused (TODO: disable)
 }

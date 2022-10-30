@@ -2,12 +2,14 @@ import { makeRenderLoop, camera, cameraControls, gui, gl } from './init';
 import ForwardRenderer from './renderers/forward';
 import ForwardPlusRenderer from './renderers/forwardPlus';
 import ClusteredDeferredRenderer from './renderers/clusteredDeferred';
+import ClusteredDeferredOptimizedRenderer from './renderers/clusteredDeferredOptimized';
 import Scene from './scene';
 import Wireframe from './wireframe';
 
 const FORWARD = 'Forward';
 const FORWARD_PLUS = 'Forward+';
 const CLUSTERED = 'Clustered Deferred';
+const CLUSTERED_OPTIMIZED = 'Clustered Optimized';
 
 const params = {
   renderer: CLUSTERED,
@@ -27,10 +29,13 @@ function setRenderer(renderer) {
     case CLUSTERED:
       params._renderer = new ClusteredDeferredRenderer(15, 15, 15);
       break;
+    case CLUSTERED_OPTIMIZED:
+      params._renderer = new ClusteredDeferredOptimizedRenderer(15, 15, 15);
+      break;
   }
 }
 
-gui.add(params, 'renderer', [FORWARD, FORWARD_PLUS, CLUSTERED]).onChange(setRenderer);
+gui.add(params, 'renderer', [FORWARD, FORWARD_PLUS, CLUSTERED, CLUSTERED_OPTIMIZED]).onChange(setRenderer);
 
 const scene = new Scene();
 scene.loadGLTF('models/sponza/sponza.gltf');

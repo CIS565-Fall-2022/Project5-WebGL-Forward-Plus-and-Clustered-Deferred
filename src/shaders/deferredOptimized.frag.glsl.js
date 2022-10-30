@@ -99,8 +99,6 @@ export default function(params) {
     // Extract data from g-buffers
     vec4 gb0 = texture2D(u_gbuffers[0], v_uv); // position.xyz, normal.x
     vec4 gb1 = texture2D(u_gbuffers[1], v_uv); // albedo.xyz, normal.y
-    vec4 gb2 = texture2D(u_gbuffers[2], v_uv); // nothing (specular intensity float)
-    vec4 gb3 = texture2D(u_gbuffers[3], v_uv); // nothing 
 
     // Uncomment for visualizing G-Buffer values
     //vec3 posColor = reconstructWorldPos(gb0.x);
