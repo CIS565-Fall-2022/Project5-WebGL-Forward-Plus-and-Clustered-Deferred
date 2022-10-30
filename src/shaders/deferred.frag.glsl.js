@@ -3,8 +3,8 @@ export default function(params) {
   #version 100
   precision highp float;
 
-  //#define LAMBERTIAN
-  #define BLINN_PHONG
+  #define LAMBERTIAN
+  //#define BLINN_PHONG
   #define PI 3.1415926535897932384626433832795
 
   uniform mat4 u_viewMatrix;
@@ -21,8 +21,6 @@ export default function(params) {
   uniform float u_aspect;
   uniform float u_clipDist;
   
-  varying vec4 v_position;
-  varying vec3 v_viewDir;
   varying vec2 v_uv;
 
   struct Light {
@@ -74,46 +72,26 @@ export default function(params) {
       return 0.0;
     }
   }
-
-  // Based on the paper "A Survey of Efficient Representations for Independent Unit Vectors" (Cigolle et al. 2014)
-  vec2 signNotZero(vec2 nor) {
-    return vec2((nor.x >= 0.0) ? 1.0 : -1.0, (nor.y >= 0.0) ? 1.0 : -1.0);
-  }
-
-  vec3 decodeNormalBasic(vec3 nor) {
-    return nor * 2.0 - 1.0;
-  }
-
-  vec3 decodeNormalOct(vec2 en) {
-    vec3 n = vec3(en.xy, 1.0 - abs(en.x) - abs(en.y));
-    if (n.z < 0.0) n.xy = (1.0 - abs(n.yx)) * signNotZero(n.xy);
-    return normalize (n);
-  }
-
-  vec3 reconstructWorldPos(float depth) {
-    vec3 viewDir = normalize(v_viewDir);
-    return u_camPos + depth * viewDir;
-  }
   
   void main() {
     // Extract data from g-buffers
-    vec4 gb0 = texture2D(u_gbuffers[0], v_uv); // position.xyz, normal.x
-    vec4 gb1 = texture2D(u_gbuffers[1], v_uv); // albedo.xyz, normal.y
-    vec4 gb2 = texture2D(u_gbuffers[2], v_uv); // nothing (specular intensity float)
+    vec4 gb0 = texture2D(u_gbuffers[0], v_uv); // position
+    vec4 gb1 = texture2D(u_gbuffers[1], v_uv); // normal
+    vec4 gb2 = texture2D(u_gbuffers[2], v_uv); // albedo, spec exponent
     vec4 gb3 = texture2D(u_gbuffers[3], v_uv); // nothing 
 
     // Uncomment for visualizing G-Buffer values
-    //vec3 posColor = reconstructWorldPos(gb0.x);
-    //vec3 normColor = 0.5 * (decodeNormalOct(vec2(gb0.y, gb0.z)) + vec3(1.0));
-    //vec3 albedo = gb1.xyz;
+    //vec3 posColor = gb0.xyz;
+    //vec3 normColor = 0.5 * (gb1.xyz + vec3(1.0));
+    //vec3 albedo = gb2.xyz;
     //gl_FragColor = vec4(posColor * 0.05, 1.0);
     //return;
 
-    vec3 pos = reconstructWorldPos(gb0.x);
-    vec3 norm = decodeNormalOct(vec2(gb0.y, gb0.z));
-    vec3 diffuseColor = gb1.xyz;
+    vec3 pos = gb0.xyz;
+    vec3 norm = gb1.xyz;
+    vec3 diffuseColor = gb2.xyz;
     vec3 specularColor = vec3(1.0);
-    float specExponent = gb0.w;
+    float specExponent = gb2.w;
 
     // Get cluster index of current fragment
     vec3 viewPos = (u_viewMatrix * vec4(pos, 1.0)).xyz;

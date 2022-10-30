@@ -2,7 +2,6 @@
 precision highp float;
 
 uniform mat4 u_viewProjectionMatrix;
-uniform mat4 u_viewMatrix;
 
 attribute vec3 a_position;
 attribute vec3 a_normal;
@@ -18,5 +17,4 @@ void main() {
     v_position = a_position;
     v_normal = a_normal;
     v_uv = a_uv;
-    v_viewPos = (u_viewMatrix * vec4(v_position, 1.0)).xyz;
 }

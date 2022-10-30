@@ -3,8 +3,8 @@ export default function(params) {
   #version 100
   precision highp float;
 
-  //#define LAMBERTIAN
-  #define BLINN_PHONG
+  #define LAMBERTIAN
+  //#define BLINN_PHONG
   #define PI 3.1415926535897932384626433832795
 
   uniform mat4 u_viewMatrix;
@@ -97,8 +97,8 @@ export default function(params) {
   
   void main() {
     // Extract data from g-buffers
-    vec4 gb0 = texture2D(u_gbuffers[0], v_uv); // position.xyz, normal.x
-    vec4 gb1 = texture2D(u_gbuffers[1], v_uv); // albedo.xyz, normal.y
+    vec4 gb0 = texture2D(u_gbuffers[0], v_uv); // depth, normal.x, normal.y, specExponent
+    vec4 gb1 = texture2D(u_gbuffers[1], v_uv); // albedo.xyz, 
 
     // Uncomment for visualizing G-Buffer values
     //vec3 posColor = reconstructWorldPos(gb0.x);
@@ -120,18 +120,10 @@ export default function(params) {
     float halfXLen = halfYLen * u_aspect;
     int clusterX = int(viewPos.x + (u_slices.x * halfXLen) / (2.0 * halfXLen));
     int clusterY = int(viewPos.y + (u_slices.y * halfYLen) / (2.0 * halfYLen));
-
-    //int clusterX = int(u_slices.x * (gl_FragCoord.x / u_screendims.x));
-    //int clusterY = int(u_slices.y * (gl_FragCoord.y / u_screendims.y));
     int clusterZ = int(u_slices.z * (viewPos.z / u_clipDist));
 
     int clusterIndex = clusterX + clusterY * int(u_slices.x) + clusterZ * int(u_slices.x) * int(u_slices.y);
     int clusterLightsCount = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, 0));
-
-    /*if (clusterLightsCount == 0) {
-      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-      return;
-    }*/
 
     // Do lighting
     vec3 fragColor = vec3(0.0);

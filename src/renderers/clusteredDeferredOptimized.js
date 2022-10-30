@@ -4,7 +4,7 @@ import { loadShaderProgram, renderFullscreenQuad } from '../utils';
 import { NUM_LIGHTS } from '../scene';
 import toTextureVert from '../shaders/deferredOptimizedToTexture.vert.glsl';
 import toTextureFrag from '../shaders/deferredOptimizedToTexture.frag.glsl';
-import QuadVertSource from '../shaders/quad.vert.glsl';
+import QuadVertSource from '../shaders/quadOptimized.vert.glsl';
 import fsSource from '../shaders/deferredOptimized.frag.glsl.js';
 import TextureBuffer from './textureBuffer';
 import BaseRenderer, { MAX_LIGHTS_PER_CLUSTER } from './base';
@@ -30,7 +30,7 @@ export default class ClusteredDeferredOptimizedRenderer extends BaseRenderer {
       numGBuffers: NUM_GBUFFERS,
       maxClusterLights: MAX_LIGHTS_PER_CLUSTER,
     }), {
-      uniforms: ['u_viewMatrix', 'u_invProjectionMatrix', 'u_invViewProjectionMatrix', 'u_clusterbuffer', 'u_lightbuffer', 'u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
+      uniforms: ['u_viewMatrix', 'u_invProjectionMatrix', 'u_invViewProjectionMatrix', 'u_clusterbuffer', 'u_lightbuffer', 'u_gbuffers[0]', 'u_gbuffers[1]',
                 'u_clusterdims', 'u_screendims', 'u_slices', 'u_camPos', 'u_fov', 'u_aspect', 'u_clipDist'],
       attribs: ['a_uv'],
     });
