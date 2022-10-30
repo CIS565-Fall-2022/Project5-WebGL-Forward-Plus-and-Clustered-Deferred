@@ -21,7 +21,7 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     this._lightTexture = new TextureBuffer(NUM_LIGHTS, 8);
     
     this._progCopy = loadShaderProgram(toTextureVert, toTextureFrag, {
-      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap'],
+      uniforms: ['u_viewProjectionMatrix', 'u_viewMatrix', 'u_colmap', 'u_normap'],
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
@@ -30,7 +30,7 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       numGBuffers: NUM_GBUFFERS,
       maxClusterLights: MAX_LIGHTS_PER_CLUSTER,
     }), {
-      uniforms: ['u_viewMatrix', 'u_clusterbuffer', 'u_lightbuffer', 'u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
+      uniforms: ['u_viewMatrix', 'u_invProjectionMatrix', 'u_clusterbuffer', 'u_lightbuffer', 'u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
                 'u_clusterdims', 'u_screendims', 'u_slices', 'u_camPos', 'u_fov', 'u_aspect', 'u_clipDist'],
       attribs: ['a_uv'],
     });
@@ -126,6 +126,9 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     // Upload the camera matrix
     gl.uniformMatrix4fv(this._progCopy.u_viewProjectionMatrix, false, this._viewProjectionMatrix);
 
+    // Upload the view matrix
+    gl.uniformMatrix4fv(this._progCopy.u_viewMatrix, false, this._viewMatrix);
+
     // Draw the scene. This function takes the shader program so that the model's textures can be bound to the right inputs
     scene.draw(this._progCopy);
     
@@ -174,6 +177,11 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
 
     // Upload view matrix
     gl.uniformMatrix4fv(this._progShade.u_viewMatrix, false, this._viewMatrix);
+
+    // Upload inverse of view projection matrix
+    let invertedProj = mat4.create();
+    mat4.invert(invertedProj, this._projectionMatrix);
+    gl.uniformMatrix4fv(this._progShade.u_invProjectionMatrix, false, invertedProj);
 
     gl.uniform3fv(this._progShade.u_camPos, camera.position);
     gl.uniform1f(this._progShade.u_fov, camera.fov);

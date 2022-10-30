@@ -6,6 +6,7 @@ uniform sampler2D u_colmap;
 uniform sampler2D u_normap;
 
 varying vec3 v_position;
+varying vec3 v_viewPos;
 varying vec3 v_normal;
 varying vec2 v_uv;
 
@@ -33,12 +34,14 @@ vec2 encodeNormalOct(vec3 nor) {
 
 void main() {
     vec3 norm = applyNormalMap(v_normal, vec3(texture2D(u_normap, v_uv)));
-    norm.xy = encodeNormalOct(norm);
+    vec2 encodedNorm = encodeNormalOct(norm);
     vec3 col = vec3(texture2D(u_colmap, v_uv));
+    float specExponent = 16.0;
+    float depth = length(v_viewPos);
 
     // Populate g-buffer
-    gl_FragData[0] = vec4(v_position, norm.x);
-    gl_FragData[1] = vec4(col, norm.y);
-    gl_FragData[2] = vec4(16.0, 0.0, 0.0, 0.0); // unused (TODO: disable)
+    gl_FragData[0] = vec4(v_position, encodedNorm.x);
+    gl_FragData[1] = vec4(col, encodedNorm.y);
+    gl_FragData[2] = vec4(specExponent, depth, 0.0, 0.0); // unused (TODO: disable)
     gl_FragData[3] = vec4(0.0); // unused (TODO: disable)
 }

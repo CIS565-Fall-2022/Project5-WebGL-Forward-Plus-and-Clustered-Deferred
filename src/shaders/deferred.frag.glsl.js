@@ -8,6 +8,7 @@ export default function(params) {
   #define PI 3.1415926535897932384626433832795
 
   uniform mat4 u_viewMatrix;
+  uniform mat4 u_invProjectionMatrix;
   
   uniform sampler2D u_clusterbuffer;
   uniform sampler2D u_lightbuffer;
@@ -87,6 +88,16 @@ export default function(params) {
     if (n.z < 0.0) n.xy = (1.0 - abs(n.yx)) * signNotZero(n.xy);
     return normalize (n);
   }
+
+  vec3 reconstructWorldPos(float depth) {
+    vec2 ndc = (gl_FragCoord.xy / u_screendims.xy);
+    ndc = ndc * 2.0 - 1.0;
+
+    // Screen-space position
+    vec4 pos = vec4(ndc.xy, depth * 0.02, 1.0);
+    pos = u_invProjectionMatrix * pos;
+    return pos.xyz / pos.w;
+  }
   
   void main() {
     // Extract data from g-buffers
@@ -97,10 +108,12 @@ export default function(params) {
 
     // Uncomment for visualizing G-Buffer values
     //vec3 posColor = gb0.xyz * 0.05;
+    vec3 posColor = reconstructWorldPos(gb2.y);
     //vec3 normColor = 0.5 * (decodeNormalOct(vec2(gb0.w, gb1.w)) + vec3(1.0));
     //vec3 albedo = gb1.xyz;
-    //gl_FragColor = vec4(posColor, 1.0);
-    //return;
+    vec3 depth = vec3(gb2.y * 0.02);
+    gl_FragColor = vec4(posColor, 1.0);
+    return;
 
     vec3 pos = gb0.xyz;
     vec3 norm = decodeNormalOct(vec2(gb0.w, gb1.w));
