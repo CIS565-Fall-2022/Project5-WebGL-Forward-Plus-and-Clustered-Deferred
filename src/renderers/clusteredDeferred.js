@@ -30,7 +30,7 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       numGBuffers: NUM_GBUFFERS,
       maxClusterLights: MAX_LIGHTS_PER_CLUSTER,
     }), {
-      uniforms: ['u_viewMatrix', 'u_invProjectionMatrix', 'u_clusterbuffer', 'u_lightbuffer', 'u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
+      uniforms: ['u_viewMatrix', 'u_invProjectionMatrix', 'u_invViewProjectionMatrix', 'u_clusterbuffer', 'u_lightbuffer', 'u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
                 'u_clusterdims', 'u_screendims', 'u_slices', 'u_camPos', 'u_fov', 'u_aspect', 'u_clipDist'],
       attribs: ['a_uv'],
     });
@@ -182,6 +182,10 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     let invertedProj = mat4.create();
     mat4.invert(invertedProj, this._projectionMatrix);
     gl.uniformMatrix4fv(this._progShade.u_invProjectionMatrix, false, invertedProj);
+
+    let invertedViewProj = mat4.create();
+    mat4.invert(invertedViewProj, this._viewProjectionMatrix);
+    gl.uniformMatrix4fv(this._progShade.u_invViewProjectionMatrix, false, invertedViewProj);
 
     gl.uniform3fv(this._progShade.u_camPos, camera.position);
     gl.uniform1f(this._progShade.u_fov, camera.fov);
