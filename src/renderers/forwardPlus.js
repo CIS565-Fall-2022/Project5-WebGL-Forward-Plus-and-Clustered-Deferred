@@ -8,7 +8,7 @@ import TextureBuffer from './textureBuffer';
 import BaseRenderer, { MAX_LIGHTS_PER_CLUSTER } from './base';
 
 export default class ForwardPlusRenderer extends BaseRenderer {
-  constructor(xSlices, ySlices, zSlices) {
+  constructor(xSlices, ySlices, zSlices, surfShader) {
     super(xSlices, ySlices, zSlices);
 
     // Create a texture to store light data
@@ -18,10 +18,12 @@ export default class ForwardPlusRenderer extends BaseRenderer {
       numLights: NUM_LIGHTS,
       maxClusterLights: MAX_LIGHTS_PER_CLUSTER,
     }), {
-      uniforms: ['u_viewProjectionMatrix', 'u_viewMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer', 'u_clusterdims', 'u_slices', 'u_screendims', 'u_fov', 'u_aspect', 'u_clipDist'],
+      uniforms: ['u_viewProjectionMatrix', 'u_viewMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer', 'u_clusterdims', 'u_slices', 'u_screendims', 
+                 'u_fov', 'u_aspect', 'u_clipDist', 'u_camPos', 'u_surfaceShader'],
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
+    this._surfaceShader = surfShader;
     this._projectionMatrix = mat4.create();
     this._viewMatrix = mat4.create();
     this._viewProjectionMatrix = mat4.create();
@@ -86,8 +88,14 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     gl.uniform2fv(this._shaderProgram.u_clusterdims, vec2.fromValues(this._elementCount, this._elementSize));
     gl.uniform3fv(this._shaderProgram.u_slices, vec3.fromValues(this._xSlices, this._ySlices, this._zSlices));
     gl.uniform2fv(this._shaderProgram.u_screendims, vec2.fromValues(canvas.width, canvas.height));
+    gl.uniform3fv(this._shaderProgram.u_camPos, camera.position);
+    gl.uniform1i(this._shaderProgram.u_surfaceShader, this._surfaceShader);
 
     // Draw the scene. This function takes the shader program so that the model's textures can be bound to the right inputs
     scene.draw(this._shaderProgram);
+  }
+
+  updateSurfaceShader(shader) {
+    this._surfaceShader = shader;
   }
 };

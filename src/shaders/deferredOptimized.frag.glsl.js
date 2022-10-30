@@ -20,6 +20,7 @@ export default function(params) {
   uniform float u_fov;
   uniform float u_aspect;
   uniform float u_clipDist;
+  uniform int u_surfaceShader;
   
   varying vec4 v_position;
   varying vec3 v_viewDir;
@@ -120,7 +121,11 @@ export default function(params) {
     float halfXLen = halfYLen * u_aspect;
     int clusterX = int(viewPos.x + (u_slices.x * halfXLen) / (2.0 * halfXLen));
     int clusterY = int(viewPos.y + (u_slices.y * halfYLen) / (2.0 * halfYLen));
-    int clusterZ = int(u_slices.z * (viewPos.z / u_clipDist));
+    int clusterZ = int(viewPos.z / (u_clipDist / u_slices.z));
+
+    // Uncomment these to see method with artifacts
+    //clusterX = int(gl_FragCoord.x / (u_screendims.x / u_slices.x));
+    //clusterY = int(gl_FragCoord.y / (u_screendims.y / u_slices.y));
 
     int clusterIndex = clusterX + clusterY * int(u_slices.x) + clusterZ * int(u_slices.x) * int(u_slices.y);
     int clusterLightsCount = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, 0));
@@ -137,32 +142,33 @@ export default function(params) {
       // Unpack light info
       Light light = UnpackLight(lightIdx);
 
-#ifdef LAMBERTIAN
-      float lightDistance = distance(light.position, pos);
-      vec3 L = (light.position - pos) / lightDistance;
-
-      float lightIntensity = cubicGaussian(2.0 * lightDistance / light.radius);
-      float lambertTerm = max(dot(L, norm), 0.0);
-
-      fragColor += diffuseColor * lambertTerm * light.color * vec3(lightIntensity);
-#endif
-
-#ifdef BLINN_PHONG
-      float lightDistance = distance(light.position, pos);
-      vec3 L = (light.position - pos) / lightDistance;
-
-      float lightIntensity = cubicGaussian(2.0 * lightDistance / light.radius);
-      float NdotL = max(dot(L, norm), 0.0);
-      vec3 diffuseTerm = NdotL * light.color * lightIntensity;
-
-      vec3 view = normalize(u_camPos - pos);
-      vec3 H = normalize(view + L);
-      float NdotH = max(dot(H, norm), 0.0);
-      float specIntensity = pow(NdotH, specExponent);
-      vec3 specularTerm = specIntensity * light.color * lightIntensity;
-
-      fragColor += diffuseColor * diffuseTerm + specularColor * specularTerm;
-#endif
+      // Lambertian
+      if (u_surfaceShader == 0) {
+        float lightDistance = distance(light.position, pos);
+        vec3 L = (light.position - pos) / lightDistance;
+  
+        float lightIntensity = cubicGaussian(2.0 * lightDistance / light.radius);
+        float lambertTerm = max(dot(L, norm), 0.0);
+  
+        fragColor += diffuseColor * lambertTerm * light.color * vec3(lightIntensity);
+      }
+      // Blinn-Phong
+      else if (u_surfaceShader == 1) {
+        float lightDistance = distance(light.position, pos);
+        vec3 L = (light.position - pos) / lightDistance;
+  
+        float lightIntensity = cubicGaussian(2.0 * lightDistance / light.radius);
+        float NdotL = max(dot(L, norm), 0.0);
+        vec3 diffuseTerm = NdotL * light.color * lightIntensity;
+  
+        vec3 view = normalize(u_camPos - pos);
+        vec3 H = normalize(view + L);
+        float NdotH = max(dot(H, norm), 0.0);
+        float specIntensity = pow(NdotH, specExponent);
+        vec3 specularTerm = specIntensity * light.color * lightIntensity;
+  
+        fragColor += diffuseColor * diffuseTerm + specularColor * specularTerm;
+      }
     }
 
     const vec3 ambientLight = vec3(0.025);

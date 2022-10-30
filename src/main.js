@@ -11,8 +11,14 @@ const FORWARD_PLUS = 'Forward+';
 const CLUSTERED = 'Clustered Deferred';
 const CLUSTERED_OPTIMIZED = 'Clustered Optimized';
 
+const LAMBERTIAN = 'Lambertian';
+const BLINN_PHONG = 'Blinn-Phong';
+
+let currShader = 0; // Default: Lambertian
+
 const params = {
   renderer: CLUSTERED,
+  surfaceShader: LAMBERTIAN,
   _renderer: null,
 };
 
@@ -21,21 +27,33 @@ setRenderer(params.renderer);
 function setRenderer(renderer) {
   switch(renderer) {
     case FORWARD:
-      params._renderer = new ForwardRenderer();
+      params._renderer = new ForwardRenderer(currShader);
       break;
     case FORWARD_PLUS:
-      params._renderer = new ForwardPlusRenderer(15, 15, 15);
+      params._renderer = new ForwardPlusRenderer(25, 25, 25, currShader);
       break;
     case CLUSTERED:
-      params._renderer = new ClusteredDeferredRenderer(15, 15, 15);
+      params._renderer = new ClusteredDeferredRenderer(25, 25, 25, currShader);
       break;
     case CLUSTERED_OPTIMIZED:
-      params._renderer = new ClusteredDeferredOptimizedRenderer(15, 15, 15);
+      params._renderer = new ClusteredDeferredOptimizedRenderer(25, 25, 25, currShader);
+      break;
+  }
+}
+
+function setShader(shader) {
+  switch(shader) {
+    case LAMBERTIAN:
+      currShader = 0;
+      break;
+    case BLINN_PHONG:
+      currShader = 1;
       break;
   }
 }
 
 gui.add(params, 'renderer', [FORWARD, FORWARD_PLUS, CLUSTERED, CLUSTERED_OPTIMIZED]).onChange(setRenderer);
+gui.add(params, 'surfaceShader', [LAMBERTIAN, BLINN_PHONG]).onChange(setShader);
 
 const scene = new Scene();
 scene.loadGLTF('models/sponza/sponza.gltf');
@@ -58,15 +76,17 @@ gl.enable(gl.DEPTH_TEST);
 
 function render() {
   scene.update();  
+  params._renderer.updateSurfaceShader(currShader);
   params._renderer.render(camera, scene, wireframe);
 
   // LOOK: Render wireframe "in front" of everything else.
   // If you would like the wireframe to render behind and in front
   // of objects based on relative depths in the scene, comment out /
   //the gl.disable(gl.DEPTH_TEST) and gl.enable(gl.DEPTH_TEST) lines.
-  gl.disable(gl.DEPTH_TEST);
-  wireframe.render(camera);
-  gl.enable(gl.DEPTH_TEST);
+
+  // gl.disable(gl.DEPTH_TEST);
+  // wireframe.render(camera);
+  // gl.enable(gl.DEPTH_TEST);
 }
 
 makeRenderLoop(render)();

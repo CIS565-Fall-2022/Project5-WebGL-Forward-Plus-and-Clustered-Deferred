@@ -12,7 +12,7 @@ import BaseRenderer, { MAX_LIGHTS_PER_CLUSTER } from './base';
 export const NUM_GBUFFERS = 2;
 
 export default class ClusteredDeferredOptimizedRenderer extends BaseRenderer {
-  constructor(xSlices, ySlices, zSlices) {
+  constructor(xSlices, ySlices, zSlices, surfShader) {
     super(xSlices, ySlices, zSlices);
     
     this.setupDrawBuffers(canvas.width, canvas.height);
@@ -31,10 +31,11 @@ export default class ClusteredDeferredOptimizedRenderer extends BaseRenderer {
       maxClusterLights: MAX_LIGHTS_PER_CLUSTER,
     }), {
       uniforms: ['u_viewMatrix', 'u_invProjectionMatrix', 'u_invViewProjectionMatrix', 'u_clusterbuffer', 'u_lightbuffer', 'u_gbuffers[0]', 'u_gbuffers[1]',
-                'u_clusterdims', 'u_screendims', 'u_slices', 'u_camPos', 'u_fov', 'u_aspect', 'u_clipDist'],
+                'u_clusterdims', 'u_screendims', 'u_slices', 'u_camPos', 'u_fov', 'u_aspect', 'u_clipDist', 'u_surfaceShader'],
       attribs: ['a_uv'],
     });
 
+    this._surfaceShader = surfShader;
     this._projectionMatrix = mat4.create();
     this._viewMatrix = mat4.create();
     this._viewProjectionMatrix = mat4.create();
@@ -194,7 +195,12 @@ export default class ClusteredDeferredOptimizedRenderer extends BaseRenderer {
     gl.uniform2fv(this._progShade.u_clusterdims, vec2.fromValues(this._elementCount, this._elementSize));
     gl.uniform3fv(this._progShade.u_slices, vec3.fromValues(this._xSlices, this._ySlices, this._zSlices));
     gl.uniform2fv(this._progShade.u_screendims, vec2.fromValues(canvas.width, canvas.height));
+    gl.uniform1i(this._progShade.u_surfaceShader, this._surfaceShader);
 
     renderFullscreenQuad(this._progShade);
+  }
+
+  updateSurfaceShader(shader) {
+    this._surfaceShader = shader;
   }
 };
