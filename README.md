@@ -19,11 +19,11 @@ microfacet shading are included as optional materials.**
 
 ### Live Online
 
-[![](img/thumb.png)](http://TODO.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred)
+![](img/thumb.png)](http://TODO.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred)
 
 ### Demo Video/GIF
 
-[![](img/video.png)](TODO)
+![](img/project_gif.gif)
 
 ## IMPLEMENTATION
 
