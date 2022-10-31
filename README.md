@@ -181,6 +181,8 @@ with real-time rates! Forward plus is also a bit better than clustered deferred 
 due to the performance gains from only shading one fragment being less than the additional overhead of
 a multistep rendering process with extra buffers.
 
+This was with 20x20x20 cluster slices
+
 ### Light Radius
 
 ![](img/figures/light_radius.png)
@@ -197,6 +199,8 @@ and overall performance.
 Because forward rendering performance is not dependent on the light radius, changing light radius
 makes no performance impact.
 
+This was with 20x20x20 cluster slices and 1000 lights
+
 ### Cluster Slices
 
 ![](img/figures/cluster_slices.png)
@@ -210,6 +214,8 @@ causes not all the lights to be rendered at this low of cluster value. Theoretic
 of clusters near 1 will cause the program to act more like the basic forward renderer, as a ton of lights
 will be together in a cluster.
 
+This was with 5.0 light radius and 1000 lights
+
 
 ### Shading Model
 
@@ -219,6 +225,8 @@ As can be seen from the figure above, the GGX shading model increased runtime by
 This is because there is quite a bit more math involved with this shading model as opposed to lambertian,
 which is essentially just a dot product, with some additional overhead from the gaussian falloff. However,
 the results are much more realistic, tunable, and are more extensible than plain lambertian shading.
+
+This was with 5.0 light radius and 20x20x20 cluster slices
 
 ### Optimizations
 
@@ -236,6 +244,9 @@ the amount of g-buffers that was needed. So, while it did mean less component of
 needed (6 vs 8), the additional overhead of recreating the world position meant the O2 version was
 slightly slower. In a circumstance where this change would make the g-buffer count decrease, this would
 then have a justified performance impact. 
+
+
+This was with 5.0 light radius and 20x20x20 cluster slices
 
 ### Credits
 
