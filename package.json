@@ -5,7 +5,7 @@
     "build": "webpack --mode production"
   },
   "dependencies": {
-    "dat.gui": "0.7.7",
+    "dat.gui": "^0.7.9",
     "gl-matrix": "3.4.3",
     "html-webpack-plugin": "^5.4.0",
     "spectorjs": "0.9.27",
@@ -22,7 +22,7 @@
     "babel-loader": "8.2.3",
     "webpack": "5.59.1",
     "webpack-cli": "^4.9.1",
-    "webpack-dev-server": "4.3.1",
+    "webpack-dev-server": "^4.11.1",
     "webpack-glsl-loader": "1.0.1"
   }
 }

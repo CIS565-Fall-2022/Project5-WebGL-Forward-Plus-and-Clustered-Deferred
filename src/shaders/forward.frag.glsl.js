@@ -11,6 +11,10 @@ export default function(params) {
   varying vec3 v_normal;
   varying vec2 v_uv;
 
+  const float PI = 3.14159;
+  const float GAMMA = 0.45455;
+
+
   vec3 applyNormalMap(vec3 geomnor, vec3 normap) {
     normap = normap * 2.0 - 1.0;
     vec3 up = normalize(vec3(0.001, 1, 0.001));
@@ -48,12 +52,7 @@ export default function(params) {
     vec4 v1 = texture2D(u_lightbuffer, vec2(u, 0.0));
     vec4 v2 = texture2D(u_lightbuffer, vec2(u, 0.5));
     light.position = v1.xyz;
-
-    // LOOK: This extracts the 4th float (radius) of the (index)th light in the buffer
-    // Note that this is just an example implementation to extract one float.
-    // There are more efficient ways if you need adjacent values
-    light.radius = ExtractFloat(u_lightbuffer, ${params.numLights}, 2, index, 3);
-
+    light.radius = v1.w;
     light.color = v2.rgb;
     return light;
   }
@@ -89,6 +88,13 @@ export default function(params) {
 
     const vec3 ambientLight = vec3(0.025);
     fragColor += albedo * ambientLight;
+
+
+    // Reinhard Operator (HDR)
+    //fragColor = fragColor / (fragColor + vec3(1.0, 1.0, 1.0));
+
+    // Gamma Correction
+    //fragColor = pow(fragColor, vec3(GAMMA, GAMMA, GAMMA));
 
     gl_FragColor = vec4(fragColor, 1.0);
   }
