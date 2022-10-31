@@ -25,8 +25,6 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
-    console.log(surfShader);
-
     this._progShade = loadShaderProgram(QuadVertSource, fsSource({
       numLights: NUM_LIGHTS,
       numGBuffers: NUM_GBUFFERS,

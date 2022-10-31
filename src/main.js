@@ -30,13 +30,13 @@ function setRenderer(renderer) {
       params._renderer = new ForwardRenderer(currShader);
       break;
     case FORWARD_PLUS:
-      params._renderer = new ForwardPlusRenderer(25, 25, 25, currShader);
+      params._renderer = new ForwardPlusRenderer(20, 30, 20, currShader);
       break;
     case CLUSTERED:
-      params._renderer = new ClusteredDeferredRenderer(25, 25, 25, currShader);
+      params._renderer = new ClusteredDeferredRenderer(20, 30, 20, currShader);
       break;
     case CLUSTERED_OPTIMIZED:
-      params._renderer = new ClusteredDeferredOptimizedRenderer(25, 25, 25, currShader);
+      params._renderer = new ClusteredDeferredOptimizedRenderer(20, 30, 20, currShader);
       break;
   }
 }
