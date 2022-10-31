@@ -146,7 +146,7 @@ perfectly reflected. Less metallic (also known as more plastic) means that more 
 compared to the light color. At 0.0 metallic the surface reflects the material albedo, and any of the 
 specular-like reflection created from a low roughness value will match the color of the material.
 
-I specifically based this implementation on the version that is taught in Adam Mally's CIs 561 course.
+I specifically based this implementation on the version that is taught in Adam Mally's CIS 561 course.
 The model essentially combines a fresnel term, which models reflection on the edge of material,
 a microfacet self shadow term, which models the amount of microgeometry that occludes itself at a given
 angle, and a microfacet distribution, which models how aligned microgeometry normals are to the surface
