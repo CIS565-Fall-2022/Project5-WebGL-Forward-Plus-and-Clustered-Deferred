@@ -72,6 +72,7 @@ export default function(params) {
 
     vec3 fragColor = vec3(0.0);
 
+    // getting cluster via the view space position like in base.js
     vec4 viewPos = u_viewMatrix * vec4(world_space_position, 1.0);
     float yFOVAngle = tan(75.0 * 0.5 * 3.14159 / 180.0);
     float xFOVAngle = yFOVAngle * u_canvasresolution.x / u_canvasresolution.y;
@@ -83,10 +84,6 @@ export default function(params) {
 
     int this_cluster_z = int(u_clusterslices.z * viewPos.z / (1000.0 - 0.1));
 
-
-    //int this_cluster_x = int((gl_FragCoord.x / u_canvasresolution.x) * u_clusterslices.x);
-    //int this_cluster_y = int((gl_FragCoord.y / u_canvasresolution.y) * u_clusterslices.y);
-    //int this_cluster_z = int(((gl_FragCoord.z * gl_FragCoord.w) / (1000.0 - 0.1)) * u_clusterslices.z);
     int texture_width = int(u_clusterslices.x * u_clusterslices.y * u_clusterslices.z);
     int texture_height = int(ceil((float(${params.maxLightsPerCluster}) + 1.0) / 4.0));
 
@@ -106,7 +103,6 @@ export default function(params) {
       }
       else {
         int light_idx = int(ExtractFloat(u_clusterbuffer, texture_width, texture_height, idx, light + 1));
-        //light_idx = light;
         Light this_light = UnpackLight(light_idx);
 
 

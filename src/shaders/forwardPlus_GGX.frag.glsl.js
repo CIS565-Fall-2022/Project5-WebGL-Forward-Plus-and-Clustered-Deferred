@@ -111,6 +111,7 @@ float microfacetDTerm(float roughness, vec3 n, vec3 wh) {
 
     vec3 fragColor = vec3(0.0);
 
+    // getting cluster via the view space position like in base.js
     float xSliceHalfWidth = u_frustumDims.x * v_view_position.z;
     int this_cluster_x = int(v_view_position.x + float(${params.numXSlices}) * xSliceHalfWidth / (2.0 * xSliceHalfWidth));
 

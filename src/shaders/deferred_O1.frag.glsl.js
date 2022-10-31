@@ -95,6 +95,7 @@ export default function(params) {
 
     vec3 fragColor = vec3(0.0);
 
+    // getting cluster via the view space position like in base.js
     vec4 viewPos = u_viewMatrix * vec4(world_space_position, 1.0);
     float yFOVAngle = tan(75.0 * 0.5 * 3.14159 / 180.0);
     float xFOVAngle = yFOVAngle * u_canvasresolution.x / u_canvasresolution.y;

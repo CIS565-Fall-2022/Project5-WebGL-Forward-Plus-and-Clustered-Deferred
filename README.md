@@ -96,7 +96,8 @@ that, given two values of the normal, x and y, the normal should simply be a val
 the magnitude of all three equals one. So we should be able to solve for the z value with just the x and y values!
 However, the direction of the z component cannot be exactly computed using this approach, as for each
 x and y tuple there could be two z values that satisfy the normalized criteria, +z and -z. So, instead
-the octahedron normal enconding method is used instead.
+the octahedron normal encoding method is used instead. Read more about it in the paper by Zina Cigolle et. al
+linked in the credits below!
 
 With this optimization, we reduce the number of g-buffers from 3 to 2!
 
@@ -104,7 +105,7 @@ With this optimization, we reduce the number of g-buffers from 3 to 2!
 
 The final g-buffer optimization made was to reconstruct the world position from a depth value. This would
 decrease the amount of data stored in the g-buffer for position from 3 (for x, y, and z) to 1 (for depth).
-To do this, the technique from Matt Pettineo is used. First, the view space position of geometry is calculated
+To do this, the technique from Matt Pettineo (linked in credits) is used. First, the view space position of geometry is calculated
 in the vertex shader of the rasterization pass. Then, in the fragment shader, the length of this position
 is stored into the g-buffer as the depth. This is because the view space position is relative to the camera
 at the origin, so the length is distance from the camera. Then, in the vertex shader of the shading pass,
@@ -130,7 +131,7 @@ case also has a cubic gaussian falloff dictated by the scene parameter ```LIGHT_
 
 #### GGX
 
-The GGX (or Torrance-Sparrow) shading model is a physically-based microfacet reflection model parameterized by a ```roughness```
+The GGX (or Cook-Torrance) shading model is a physically-based microfacet reflection model parameterized by a ```roughness```
 and ```metallic```. The ```roughness``` value is between ```0.0``` and ```1.0``` and determines the
 amount of light that is reflected by the surface based on the viewing angle and lighting angle. More
 rough means closer to a lambertian surface, while less rough is more like a specular surface.
@@ -142,6 +143,10 @@ compared to the light color. At 0.0 metallic the surface reflects the material a
 specular-like reflection created from a low roughness value will match the color of the material.
 
 I specifically based this implementation on the version that is taught in Adam Mally's CIs 561 course.
+The model essentially combines a fresnel term, which models reflection on the edge of material,
+a microfacet self shadow term, which models the amount of microgeometry that occludes itself at a given
+angle, and a microfacet distribution, which models how aligned microgeometry normals are to the surface
+normal.
 
 | Plastic Rough   | Plastic Specular |
 | ----------- | ----------- |
