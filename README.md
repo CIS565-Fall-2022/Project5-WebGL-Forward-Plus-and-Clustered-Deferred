@@ -230,5 +230,5 @@ then have a justified performance impact.
 * [minimal-gltf-loader](https://github.com/shrekshao/minimal-gltf-loader) by [@shrekshao](https://github.com/shrekshao)
 
 * Adam Mally's CIS 561 Slides on Real-Time Microfacet Materials and Homework 7
-* Octohedron encoding
-* View Position creation form depth
+* Zina H. Cigolle, Sam Donow, Daniel Evangelakos, Michael Mara, Morgan McGuire, and Quirin Meyer, Survey of Efficient Representations for Independent Unit Vectors, Journal of Computer Graphics Techniques (JCGT), vol. 3, no. 2, 1-30, 2014 (https://jcgt.org/published/0003/02/01/)
+* POSITION FROM DEPTH 3: BACK IN THE HABIT by Matt Pettineo (https://mynameismjp.wordpress.com/2010/09/05/position-from-depth-3/)
