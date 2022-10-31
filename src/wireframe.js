@@ -24,6 +24,7 @@ export default class Wireframe {
     this._vertexAttributes;
   }
 
+
   addLineSegment(startPosition, endPosition, color) {
     this._positions.push(startPosition.slice()); // copy the input arrays
     this._positions.push(endPosition.slice());

@@ -7,7 +7,7 @@ import fsSource from '../shaders/forward.frag.glsl.js';
 import TextureBuffer from './textureBuffer';
 
 export default class ForwardRenderer {
-  constructor() {
+  constructor(roughness, metallic) {
     // Create a texture to store light data
     this._lightTexture = new TextureBuffer(NUM_LIGHTS, 8);
 
@@ -15,13 +15,16 @@ export default class ForwardRenderer {
     this._shaderProgram = loadShaderProgram(vsSource, fsSource({
       numLights: NUM_LIGHTS,
     }), {
-      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer'],
+      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer',
+      'u_roughness', 'u_metallic'],
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
     this._projectionMatrix = mat4.create();
     this._viewMatrix = mat4.create();
     this._viewProjectionMatrix = mat4.create();
+    this._roughness = roughness;
+    this._metallic = metallic;
   }
 
   render(camera, scene) {
@@ -67,5 +70,8 @@ export default class ForwardRenderer {
 
     // Draw the scene. This function takes the shader program so that the model's textures can be bound to the right inputs
     scene.draw(this._shaderProgram);
+
+    
+    
   }
 };

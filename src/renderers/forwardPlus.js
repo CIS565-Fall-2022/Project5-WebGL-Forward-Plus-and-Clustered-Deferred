@@ -1,11 +1,12 @@
 import { gl } from '../init';
-import { mat4, vec4, vec3 } from 'gl-matrix';
+import { mat4, vec4, vec3, vec2 } from 'gl-matrix';
 import { loadShaderProgram } from '../utils';
 import { NUM_LIGHTS } from '../scene';
 import vsSource from '../shaders/forwardPlus.vert.glsl';
 import fsSource from '../shaders/forwardPlus.frag.glsl.js';
 import TextureBuffer from './textureBuffer';
-import BaseRenderer from './base';
+import BaseRenderer, { MAX_LIGHTS_PER_CLUSTER } from './base';
+import { Vector3 } from 'three';
 
 export default class ForwardPlusRenderer extends BaseRenderer {
   constructor(xSlices, ySlices, zSlices) {
@@ -16,8 +17,10 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     
     this._shaderProgram = loadShaderProgram(vsSource, fsSource({
       numLights: NUM_LIGHTS,
+      zSlices: zSlices,
+      maxLightsPerCluster: MAX_LIGHTS_PER_CLUSTER
     }), {
-      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer'],
+      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer', 'u_canvasresolution', 'u_clusterslices', 'u_viewMatrix'],
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
@@ -65,6 +68,8 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     // Upload the camera matrix
     gl.uniformMatrix4fv(this._shaderProgram.u_viewProjectionMatrix, false, this._viewProjectionMatrix);
 
+    gl.uniformMatrix4fv(this._shaderProgram.u_viewMatrix, false, this._viewMatrix);
+
     // Set the light texture as a uniform input to the shader
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, this._lightTexture.glTexture);
@@ -74,6 +79,9 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     gl.activeTexture(gl.TEXTURE3);
     gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
     gl.uniform1i(this._shaderProgram.u_clusterbuffer, 3);
+
+    gl.uniform2fv(this._shaderProgram.u_canvasresolution, vec2.fromValues(canvas.width, canvas.height));
+    gl.uniform3fv(this._shaderProgram.u_clusterslices, vec3.fromValues(this._xSlices, this._ySlices, this._zSlices));
 
     // TODO: Bind any other shader inputs
 
