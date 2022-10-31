@@ -25,6 +25,10 @@ microfacet shading are included as optional materials.**
 
 ![](img/project_gif.gif)
 
+[Different Rendering Modes Video](https://drive.google.com/file/d/1RYuBAt2-Jbwic1SZnQp2KWL_ZGWLK_P2/view?usp=sharing)
+
+[Microfacet Parameters Video](https://drive.google.com/file/d/12tZucRzFelviRDN-4Jnwx3XJEr9zrx4c/view?usp=sharing)
+
 ## IMPLEMENTATION
 
 ### Forward Rendering
