@@ -125,7 +125,7 @@ by the angle between the surface normal and the incoming light direction. The li
 case also has a cubic gaussian falloff dictated by the scene parameter ```LIGHT_RADIUS```.
 
 | Lambertian Radius 1.0   | Lambertian Radius 3.0 |
-| ----------- | ----------- |  ----------- |
+| ----------- | ----------- |
 | ![](img/figures/lambertian_1.PNG)      |   ![](img/figures/lambertian_3.PNG)     |
 
 #### GGX
@@ -144,11 +144,11 @@ specular-like reflection created from a low roughness value will match the color
 I specifically based this implementation on the version that is taught in Adam Mally's CIs 561 course.
 
 | Plastic Rough   | Plastic Specular |
-| ----------- | ----------- |  ----------- |
+| ----------- | ----------- |
 | ![](img/figures/plastic_rough.PNG)      |   ![](img/figures/plastic_spec.PNG)     |
 
 | Metal Rough   | Metal Specular |
-| ----------- | ----------- |  ----------- |
+| ----------- | ----------- |
 | ![](img/figures/metal_rough.PNG)      |   ![](img/figures/metal_spec.PNG)     |
 
 ## PERFORMANCE ANALYSIS
