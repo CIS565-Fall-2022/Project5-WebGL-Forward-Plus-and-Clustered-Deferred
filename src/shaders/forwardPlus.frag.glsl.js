@@ -5,12 +5,27 @@ export default function(params) {
   #version 100
   precision highp float;
 
+  //#define VISUALIZE_CLUSTERS
+  #define PI 3.1415926535897932384626433832795
+
+  uniform mat4 u_viewProjectionMatrix;
+  uniform mat4 u_viewMatrix;
+
   uniform sampler2D u_colmap;
   uniform sampler2D u_normap;
   uniform sampler2D u_lightbuffer;
 
   // TODO: Read this buffer to determine the lights influencing a cluster
   uniform sampler2D u_clusterbuffer;
+
+  uniform vec2 u_clusterdims;
+  uniform vec2 u_screendims;
+  uniform vec3 u_slices;
+  uniform float u_fov;
+  uniform float u_aspect;
+  uniform float u_clipDist;
+  uniform vec3 u_camPos;
+  uniform int u_surfaceShader;
 
   varying vec3 v_position;
   varying vec3 v_normal;
@@ -78,22 +93,72 @@ export default function(params) {
     vec3 albedo = texture2D(u_colmap, v_uv).rgb;
     vec3 normap = texture2D(u_normap, v_uv).xyz;
     vec3 normal = applyNormalMap(v_normal, normap);
+    vec3 specularColor = vec3(1.0);
 
     vec3 fragColor = vec3(0.0);
+    vec3 viewPos = (u_viewMatrix * vec4(v_position, 1.0)).xyz;
 
-    for (int i = 0; i < ${params.numLights}; ++i) {
-      Light light = UnpackLight(i);
-      float lightDistance = distance(light.position, v_position);
-      vec3 L = (light.position - v_position) / lightDistance;
+    // Get cluster index of current fragment
+    float tanFov = tan(0.5 * u_fov * (PI / 180.0));
+    float halfYLen = viewPos.z * tanFov;
+    float halfXLen = halfYLen * u_aspect;
+    int clusterX = int(viewPos.x + (u_slices.x * halfXLen) / (2.0 * halfXLen));
+    int clusterY = int(viewPos.y + (u_slices.y * halfYLen) / (2.0 * halfYLen));
+    int clusterZ = int(viewPos.z / (u_clipDist / u_slices.z));
 
-      float lightIntensity = cubicGaussian(2.0 * lightDistance / light.radius);
-      float lambertTerm = max(dot(L, normal), 0.0);
+    // Uncomment these to see artifacts
+    //clusterX = int(u_slices.x * (gl_FragCoord.x / u_screendims.x));
+    //clusterY = int(u_slices.y * (gl_FragCoord.y / u_screendims.y));
 
-      fragColor += albedo * lambertTerm * light.color * vec3(lightIntensity);
+    int clusterIndex = clusterX + clusterY * int(u_slices.x) + clusterZ * int(u_slices.x) * int(u_slices.y);
+    int clusterLightsCount = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, 0));
+
+    for (int i = 0; i < ${params.maxClusterLights}; ++i) {
+      if (i >= clusterLightsCount) break;
+
+      // Get light index
+      int lightIdx = int(ExtractFloat(u_clusterbuffer, int(u_clusterdims.x), int(u_clusterdims.y), clusterIndex, i + 1));
+
+      // Unpack light info
+      Light light = UnpackLight(lightIdx);
+      
+      // Lambertian
+      if (u_surfaceShader == 0) {
+        float lightDistance = distance(light.position, v_position);
+        vec3 L = (light.position - v_position) / lightDistance;
+
+        float lightIntensity = cubicGaussian(2.0 * lightDistance / light.radius);
+        float lambertTerm = max(dot(L, normal), 0.0);
+
+        fragColor += albedo * lambertTerm * light.color * vec3(lightIntensity);
+      }
+      // Blinn-Phong
+      else if (u_surfaceShader == 1) {
+        float lightDistance = distance(light.position, v_position);
+        vec3 L = (light.position - v_position) / lightDistance;
+  
+        float lightIntensity = cubicGaussian(2.0 * lightDistance / light.radius);
+        float NdotL = max(dot(L, normal), 0.0);
+        vec3 diffuseTerm = NdotL * light.color * lightIntensity;
+  
+        vec3 view = normalize(u_camPos - v_position);
+        vec3 H = normalize(view + L);
+        float NdotH = max(dot(H, normal), 0.0);
+        float specIntensity = pow(NdotH, 16.0);
+        vec3 specularTerm = specIntensity * light.color * lightIntensity;
+  
+        fragColor += albedo * diffuseTerm + specularColor * specularTerm;
+      }
     }
 
     const vec3 ambientLight = vec3(0.025);
     fragColor += albedo * ambientLight;
+
+#ifdef VISUALIZE_CLUSTERS
+    //fragColor += vec3(float(clusterX) / u_slices.x, 0.0, 0.0);
+    //fragColor += vec3(0.0, float(clusterY) / u_slices.y, 0.0);
+    fragColor += vec3(0.0, 0.0, float(clusterZ) / u_slices.z);
+#endif
 
     gl_FragColor = vec4(fragColor, 1.0);
   }

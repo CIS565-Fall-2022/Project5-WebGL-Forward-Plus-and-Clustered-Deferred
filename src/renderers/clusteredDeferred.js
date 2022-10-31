@@ -1,5 +1,5 @@
 import { gl, WEBGL_draw_buffers, canvas } from '../init';
-import { mat4, vec4 } from 'gl-matrix';
+import { mat4, vec4, vec3, vec2 } from 'gl-matrix';
 import { loadShaderProgram, renderFullscreenQuad } from '../utils';
 import { NUM_LIGHTS } from '../scene';
 import toTextureVert from '../shaders/deferredToTexture.vert.glsl';
@@ -7,12 +7,12 @@ import toTextureFrag from '../shaders/deferredToTexture.frag.glsl';
 import QuadVertSource from '../shaders/quad.vert.glsl';
 import fsSource from '../shaders/deferred.frag.glsl.js';
 import TextureBuffer from './textureBuffer';
-import BaseRenderer from './base';
+import BaseRenderer, { MAX_LIGHTS_PER_CLUSTER } from './base';
 
 export const NUM_GBUFFERS = 4;
 
 export default class ClusteredDeferredRenderer extends BaseRenderer {
-  constructor(xSlices, ySlices, zSlices) {
+  constructor(xSlices, ySlices, zSlices, surfShader) {
     super(xSlices, ySlices, zSlices);
     
     this.setupDrawBuffers(canvas.width, canvas.height);
@@ -28,11 +28,14 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     this._progShade = loadShaderProgram(QuadVertSource, fsSource({
       numLights: NUM_LIGHTS,
       numGBuffers: NUM_GBUFFERS,
+      maxClusterLights: MAX_LIGHTS_PER_CLUSTER,
     }), {
-      uniforms: ['u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]'],
+      uniforms: ['u_viewMatrix', 'u_clusterbuffer', 'u_lightbuffer', 'u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
+                'u_clusterdims', 'u_screendims', 'u_slices', 'u_camPos', 'u_fov', 'u_aspect', 'u_clipDist', 'u_surfaceShader'],
       attribs: ['a_uv'],
     });
 
+    this._surfaceShader = surfShader;
     this._projectionMatrix = mat4.create();
     this._viewMatrix = mat4.create();
     this._viewProjectionMatrix = mat4.create();
@@ -154,15 +157,38 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     gl.useProgram(this._progShade.glShaderProgram);
 
     // TODO: Bind any other shader inputs
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, this._lightTexture.glTexture);
+    gl.uniform1i(this._progShade.u_lightbuffer, 2);
+
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
+    gl.uniform1i(this._progShade.u_clusterbuffer, 3);
 
     // Bind g-buffers
-    const firstGBufferBinding = 0; // You may have to change this if you use other texture slots
+    const firstGBufferBinding = 4; // You may have to change this if you use other texture slots
     for (let i = 0; i < NUM_GBUFFERS; i++) {
       gl.activeTexture(gl[`TEXTURE${i + firstGBufferBinding}`]);
       gl.bindTexture(gl.TEXTURE_2D, this._gbuffers[i]);
       gl.uniform1i(this._progShade[`u_gbuffers[${i}]`], i + firstGBufferBinding);
     }
 
+    // Upload view matrix
+    gl.uniformMatrix4fv(this._progShade.u_viewMatrix, false, this._viewMatrix);
+
+    gl.uniform3fv(this._progShade.u_camPos, camera.position);
+    gl.uniform1f(this._progShade.u_fov, camera.fov);
+    gl.uniform1f(this._progShade.u_aspect, camera.aspect);
+    gl.uniform1f(this._progShade.u_clipDist, camera.far - camera.near);
+    gl.uniform2fv(this._progShade.u_clusterdims, vec2.fromValues(this._elementCount, this._elementSize));
+    gl.uniform3fv(this._progShade.u_slices, vec3.fromValues(this._xSlices, this._ySlices, this._zSlices));
+    gl.uniform2fv(this._progShade.u_screendims, vec2.fromValues(canvas.width, canvas.height));
+    gl.uniform1i(this._progShade.u_surfaceShader, this._surfaceShader);
+
     renderFullscreenQuad(this._progShade);
+  }
+
+  updateSurfaceShader(shader) {
+    this._surfaceShader = shader;
   }
 };
