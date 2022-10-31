@@ -49,8 +49,15 @@ remedy these two performance bottlenecks.
 
 Clustering is the process of dividing the view space frustum of the camera into slices in the x,y, and z
 directions, and assigning lights to the clusters it overlaps with its given position and radius. In order
-to do this, the bounding box of each light sphere is transformed into view space, and the . Note that
-there are still a few bugs in my implementation, and I required help
+to do this, the bounding box of each light sphere is transformed into view space, and the z coordinate
+is flipped so that it is positive in front of the camera. Then, the cluster index in x and y
+are calculated by adding the x and y view positions to the half the normalized frustum width and height,
+and multiplying by the number of slices. The z cluster is simply the z coordinate divided by the total
+view frustum depth times the number of slices.
+The cluster indices are clamped, and ceiled and floored depending on if they are the max or min respectively.
+The clusters within these x, y, and z max and min indices have their lights count incremented, and 
+the light index of the current light added to its list.
+There are still a few bugs in my implementation.
 
 ### Forward+ Rendering
 
