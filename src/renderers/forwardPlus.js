@@ -16,8 +16,10 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     
     this._shaderProgram = loadShaderProgram(vsSource, fsSource({
       numLights: NUM_LIGHTS,
-    }), {
-      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer'],
+    }), 
+    {
+      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer',
+      'u_viewMatrix', 'u_slices', 'u_height', 'u_width', 'u_near', 'u_far', 'u_clipDist'],
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
@@ -26,7 +28,7 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     this._viewProjectionMatrix = mat4.create();
   }
 
-  render(camera, scene) {
+  render(camera, scene, wireframe) {
     // Update the camera matrices
     camera.updateMatrixWorld();
     mat4.invert(this._viewMatrix, camera.matrixWorld.elements);
@@ -34,7 +36,7 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     mat4.multiply(this._viewProjectionMatrix, this._projectionMatrix, this._viewMatrix);
 
     // Update cluster texture which maps from cluster index to light list
-    this.updateClusters(camera, this._viewMatrix, scene);
+    this.updateClusters(camera, this._viewMatrix, scene, wireframe);
     
     // Update the buffer used to populate the texture packed with light data
     for (let i = 0; i < NUM_LIGHTS; ++i) {
@@ -76,6 +78,12 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     gl.uniform1i(this._shaderProgram.u_clusterbuffer, 3);
 
     // TODO: Bind any other shader inputs
+    gl.uniformMatrix4fv(this._shaderProgram.u_viewMatrix, false, this._viewMatrix);
+    gl.uniform3f(this._shaderProgram.u_slices, this._xSlices, this._ySlices, this._zSlices);
+    gl.uniform1f(this._shaderProgram.u_height, canvas.height);
+    gl.uniform1f(this._shaderProgram.u_width, canvas.width);
+    gl.uniform1f(this._shaderProgram.u_near, camera.near);
+    gl.uniform1f(this._shaderProgram.u_far, camera.far);
 
     // Draw the scene. This function takes the shader program so that the model's textures can be bound to the right inputs
     scene.draw(this._shaderProgram);
