@@ -9,11 +9,11 @@ WebGL Forward+ and Clustered Deferred Shading
 
 ### Live Online
 
-[![](img/thumb.png)](http://TODO.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred)
+[![](img/thumb.png)](http://ryanryantong.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred)
 
 ### Demo Video/GIF
 
-![vid](img/video.gif)
+![vid](img/vid.gif)
 
 ### Project Description
 This project implements forward+ and clustered deferred rendering. Forward+ rendering optimizes a forward rendering pipeline by dividing the scene into frustums. The lights in the scene are treated as spheres and are then clustered into frustum buckets based on position. This allows the shader to only need to check the lights closeby that are within the frustum instead of looping through all lights which . Blinn-phong shading is also implemented. 
