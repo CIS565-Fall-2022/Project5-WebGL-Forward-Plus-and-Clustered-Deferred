@@ -13,16 +13,27 @@ WebGL Forward+ and Clustered Deferred Shading
 
 ### Demo Video/GIF
 
-[![](img/video.png)](TODO)
+[![](img/video.png)]
 
-### (TODO: Your README)
+### Project Description
+This project implements forward+ and clustered deferred rendering. Forward+ rendering optimizes a forward rendering pipeline by dividing the scene into frustums. The lights in the scene are treated as spheres and are then clustered into frustum buckets based on position. This allows the shader to only need to check the lights closeby that are within the frustum instead of looping through all lights which . Blinn-phong shading is also implemented. 
 
-*DO NOT* leave the README to the last minute! It is a crucial part of the
-project, and we will not be able to grade you without a good README.
+### Performance Analysis
+The key advantage of the forward+ and clustered deferred pipeline is the optimization to only check relevant light sources. Therefore, performance gains are especially noticeable in scenes with a large number of lights. Clustered deferred rendering is also implemented. Clustered deferred rendering further improves the forward+ pipeline by decoupling the calculation of vertex attributes and shading. This is especially good for scenes with complex or large numbers of objects. Note that the max number of lights allowed in a cluster are increased each time to match the total number of lights. Below is a plot of delay based on the number of lights which shows these performance gains.
 
-This assignment has a considerable amount of performance analysis compared
-to implementation work. Complete the implementation early to leave time!
+### Performance
+![performance](img/performance.png)
+From these results we can clearly see that clustered deferred is fastest, followed by forward+, then regular forward rendering. This is expected because clustered deferred builds on the optimizations in forward+. 
 
+### Optimizations
+Unfortunately, I did not have time to implement further optimization but instead provide some theoretical analysis. Specifically with GBuffers that each hold 4 floats to pass 3 vec3s (9 values). If we were able to condense one of the vec3s into 2 values, we would only have 8 values meaning we can save a Gbuffer. This would reduce the number of different global memory locations read meaning better performance. This could be reduced even further if the position vector is not passed and instead calculated using the camera and X/Y/depth. Although a comparison would need to be made to see if the computations outweigh the delay improvement.
+
+###  Blinn-Phong Shading
+I implemented blinn-phong shading to improve the visual quality of the render. This is a standard technique that has negligible impact. The results can be seen below.
+### Regular
+1[regular](img/regular.png)
+### Blinn-Phong
+![blinn](img/blinn.png)
 
 ### Credits
 
