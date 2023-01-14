@@ -1,5 +1,5 @@
 export default function(params) {
-  return `
+  return glsl`
   // TODO: This is pretty much just a clone of forward.frag.glsl.js
 
   #version 100

@@ -1,5 +1,5 @@
 export default function(params) {
-  return `
+  return glsl`
   #version 100
   precision highp float;
 
