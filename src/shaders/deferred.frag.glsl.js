@@ -1,9 +1,14 @@
+const glsl = String.raw;
+
 export default function(params) {
-  return `
+  return glsl`
   #version 100
+  // replace the string interpolation with a number for VScode glsl linting extension to work
+  #define NUM_G_BUFFERS ${params.numGBuffers}
+
   precision highp float;
   
-  uniform sampler2D u_gbuffers[${params.numGBuffers}];
+  uniform sampler2D u_gbuffers[NUM_G_BUFFERS];
   
   varying vec2 v_uv;
   

@@ -1,6 +1,11 @@
+const glsl = String.raw;
+
 export default function(params) {
-  return `
+  return glsl`
   #version 100
+  // replace the string interpolation with a number for VScode glsl linting extension to work
+  #define NUM_LIGHTS ${params.numLights}
+
   precision highp float;
 
   uniform sampler2D u_colmap;
@@ -44,7 +49,7 @@ export default function(params) {
 
   Light UnpackLight(int index) {
     Light light;
-    float u = float(index + 1) / float(${params.numLights + 1});
+    float u = float(index + 1) / float(NUM_LIGHTS + 1);
     vec4 v1 = texture2D(u_lightbuffer, vec2(u, 0.0));
     vec4 v2 = texture2D(u_lightbuffer, vec2(u, 0.5));
     light.position = v1.xyz;
@@ -52,7 +57,7 @@ export default function(params) {
     // LOOK: This extracts the 4th float (radius) of the (index)th light in the buffer
     // Note that this is just an example implementation to extract one float.
     // There are more efficient ways if you need adjacent values
-    light.radius = ExtractFloat(u_lightbuffer, ${params.numLights}, 2, index, 3);
+    light.radius = ExtractFloat(u_lightbuffer, NUM_LIGHTS, 2, index, 3);
 
     light.color = v2.rgb;
     return light;
@@ -76,7 +81,7 @@ export default function(params) {
 
     vec3 fragColor = vec3(0.0);
 
-    for (int i = 0; i < ${params.numLights}; ++i) {
+    for (int i = 0; i < NUM_LIGHTS; ++i) {
       Light light = UnpackLight(i);
       float lightDistance = distance(light.position, v_position);
       vec3 L = (light.position - v_position) / lightDistance;
