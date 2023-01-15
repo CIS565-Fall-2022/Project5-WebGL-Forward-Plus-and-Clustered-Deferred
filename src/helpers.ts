@@ -29,11 +29,11 @@ export function getCorners(cam: PerspectiveCamera, slices: Vector3, index: Vecto
   const tileWidth = 2 * hw / slices.x;
   const tileHeight = 2 * hh / slices.y;
 
-  // for camera at origin, pointing outwards in -z direction
+  // Index should use origin at TOP LEFT corner of screen
   const xLeft = -hw + index.x * tileWidth;
   const xRight = xLeft + tileWidth;
-  const yBot = -hh + index.y * tileHeight;
-  const yTop = yBot + tileHeight;
+  const yTop = hh - index.y * tileHeight;
+  const yBot = yTop - tileHeight;
 
   const nw = new Vector3(xLeft, yTop, 1);
   const ne = new Vector3(xRight, yTop, 1);
@@ -59,6 +59,9 @@ export function getPlaneNormalsOfSubFrustum(cam: PerspectiveCamera, slices: Vect
   return {top, right, bottom, left, near, far};
 }
 
+// dist is positive if on correct (inside) of sub-frustum
+// dist is negative if on incorrect side, but if its abs value is less than sphere radius
+// it might still be counted as overlapping
 function signedDist(point: Vector3, planeNormal: Vector3, planeOrig: Vector3) {
   return sub(point, planeOrig).dot(planeNormal);
 }
@@ -88,7 +91,7 @@ export function subFrustumSphereIntersectTest(
   const distNear = signedDist(sphere.center, near, nearPlaneOrigin);
   const distFar = signedDist(sphere.center, far, farPlaneOrigin);
 
-  return distTop > sphere.radius && distBot > sphere.radius
-    && distLeft > sphere.radius && distRight > sphere.radius
-    && distNear > sphere.radius && distFar > sphere.radius;
+  return -distTop < sphere.radius && -distBot < sphere.radius
+    && -distLeft < sphere.radius && -distRight < sphere.radius
+    && -distNear < sphere.radius && -distFar < sphere.radius;
 }
