@@ -10,11 +10,6 @@ export const LIGHT_DT = -0.03; // how fast lights move (with same frame rate)
 // TODO: This controls the number of lights
 export const NUM_LIGHTS = 100;
 
-// not necessarily equal to camera near and far clip planes
-// for grouping light clusters
-export const FRUSTUM_NEAR_DEPTH = 1;
-export const FRUSTUM_FAR_DEPTH = 1000;
-
 class Scene {
   constructor() {
     this.lights = [];

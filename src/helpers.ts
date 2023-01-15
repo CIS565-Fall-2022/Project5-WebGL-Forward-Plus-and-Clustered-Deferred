@@ -1,5 +1,9 @@
 import { PerspectiveCamera, Quaternion, Vector3 } from "three";
-import {FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH } from "./scene";
+
+// not necessarily equal to camera near and far clip planes
+// for grouping light clusters
+export const FRUSTUM_NEAR_DEPTH = 1;
+export const FRUSTUM_FAR_DEPTH = 1000;
 
 export type Sphere = {
   center: Vector3;
@@ -55,11 +59,6 @@ export function subFrustumSphereIntersectTest(
   const eye = new Vector3();
   cam.getWorldPosition(eye);
 
-  const distTop = signedDist(sphere.center, top, eye);
-  const distBot = signedDist(sphere.center, bottom, eye);
-  const distLeft = signedDist(sphere.center, left, eye);
-  const distRight = signedDist(sphere.center, right, eye);
-
   const tileDepth = (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) / slices.z;
   const nearZ: number = FRUSTUM_NEAR_DEPTH + index.z * tileDepth;
   const farZ = nearZ + tileDepth;
@@ -68,6 +67,10 @@ export function subFrustumSphereIntersectTest(
   const nearPlaneOrigin = eye.add(camForward.multiplyScalar(nearZ));
   const farPlaneOrigin = eye.add(camForward.multiplyScalar(farZ));
 
+  const distTop = signedDist(sphere.center, top, eye);
+  const distBot = signedDist(sphere.center, bottom, eye);
+  const distLeft = signedDist(sphere.center, left, eye);
+  const distRight = signedDist(sphere.center, right, eye);
   const distNear = signedDist(sphere.center, near, nearPlaneOrigin);
   const distFar = signedDist(sphere.center, far, farPlaneOrigin);
 
