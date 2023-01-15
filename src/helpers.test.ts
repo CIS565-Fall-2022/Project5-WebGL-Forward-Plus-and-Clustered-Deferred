@@ -1,5 +1,5 @@
 import { PerspectiveCamera, Vector3 } from "three";
-import {getCorners, sub} from "./helpers";
+import {getCorners, getPlaneNormalsOfSubFrustum, sub} from "./helpers";
 
 const EPSILON = 0.01;
 
@@ -12,6 +12,10 @@ beforeEach(() => {
 
 function testApproxEq(v1: Vector3, v2: Vector3) {
   expect(v1.clone().manhattanDistanceTo(v2)).toBeLessThan(EPSILON);
+}
+
+function neg(v1: Vector3) {
+  return v1.clone().negate();
 }
 
 test("getCorners 1 slice", () => {
@@ -42,3 +46,22 @@ test("getCorners 4 slice top right", () => {
   expect(se.y).toBeCloseTo(0);
 });
 
+test("getPlaneNormalOfSubFrustum 1 slice", () => {
+  const slices = new Vector3(1, 1, 1);
+  const index = new Vector3(0, 0, 0);
+
+  const {top, right, bottom, left, near, far} = getPlaneNormalsOfSubFrustum(cam, slices, index);
+  testApproxEq(near, neg(far));
+});
+
+test("getPlaneNormalOfSubFrustum 9 slice", () => {
+  const slices = new Vector3(3, 3, 1);
+
+  const normsTopLeft = getPlaneNormalsOfSubFrustum(cam, slices, new Vector3(0, 0, 0));
+  const normsTopMid = getPlaneNormalsOfSubFrustum(cam, slices, new Vector3(1, 0, 0));
+  const normsCenter = getPlaneNormalsOfSubFrustum(cam, slices, new Vector3(1, 1, 0));
+
+  testApproxEq(normsTopLeft.right, neg(normsTopMid.left));
+  testApproxEq(normsTopLeft.right, neg(normsCenter.left));
+  testApproxEq(normsTopMid.bottom, neg(normsCenter.top));
+})
