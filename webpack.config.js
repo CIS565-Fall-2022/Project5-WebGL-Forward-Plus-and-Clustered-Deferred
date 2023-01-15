@@ -32,6 +32,11 @@ module.exports = function(env, argv) {
           },
         },
         {
+          test: /\.ts?$/,
+          use: 'ts-loader',
+          exclude: /node_modules/,
+        },
+        {
           test: /\.glsl$/,
           use: 'webpack-glsl-loader'
         },
@@ -65,6 +70,9 @@ module.exports = function(env, argv) {
         directory: path.join(__dirname, 'models'),
         publicPath: '/models',
       },
+    },
+    resolve: {
+      extensions: ['.ts', '.js'],
     },
   };
 };

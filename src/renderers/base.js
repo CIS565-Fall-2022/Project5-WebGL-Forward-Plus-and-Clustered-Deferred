@@ -1,4 +1,5 @@
 import TextureBuffer from './textureBuffer';
+import {frustumSphereIntersection} from '../helpers'
 
 export const MAX_LIGHTS_PER_CLUSTER = 100;
 
@@ -14,6 +15,7 @@ export default class BaseRenderer {
   updateClusters(camera, viewMatrix, scene) {
     // TODO: Update the cluster texture with the count and indices of the lights in each cluster
     // This will take some time. The math is nontrivial...
+    console.log(frustumSphereIntersection(camera));
 
     for (let z = 0; z < this._zSlices; ++z) {
       for (let y = 0; y < this._ySlices; ++y) {
