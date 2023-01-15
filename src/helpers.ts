@@ -10,6 +10,14 @@ export type Sphere = {
   radius: number;
 }
 
+export function sub(v1: Vector3, v2: Vector3) {
+  return v1.clone().sub(v2);
+}
+
+export function cross(v1: Vector3, v2: Vector3) {
+  return v1.clone().cross(v2);
+}
+
 export function getCorners(cam: PerspectiveCamera, slices: Vector3, index: Vector3) {
   // reference: http://davidlively.com/programming/graphics/frustum-calculation-and-culling-hopefully-demystified/
   // However, instead of using the corners of the frustum/near clip plane intersect
@@ -41,10 +49,10 @@ export function getPlaneNormalsOfSubFrustum(cam: PerspectiveCamera, slices: Vect
   const quat = new Quaternion();
   cam.getWorldQuaternion(quat);
 
-  const top = nw.cross(ne).applyQuaternion(quat).normalize();
-  const right = ne.cross(se).applyQuaternion(quat).normalize();
-  const bottom = se.cross(sw).applyQuaternion(quat).normalize();
-  const left = sw.cross(nw).applyQuaternion(quat).normalize();
+  const top = cross(nw, ne).applyQuaternion(quat).normalize();
+  const right = cross(ne, se).applyQuaternion(quat).normalize();
+  const bottom = cross(se, sw).applyQuaternion(quat).normalize();
+  const left = cross(sw, nw).applyQuaternion(quat).normalize();
   const near = new Vector3(0, 0, 1).applyQuaternion(quat);
   const far = new Vector3(0, 0, -1).applyQuaternion(quat);
 
@@ -52,7 +60,7 @@ export function getPlaneNormalsOfSubFrustum(cam: PerspectiveCamera, slices: Vect
 }
 
 function signedDist(point: Vector3, planeNormal: Vector3, planeOrig: Vector3) {
-  return point.sub(planeOrig).dot(planeNormal);
+  return sub(point, planeOrig).dot(planeNormal);
 }
 
 export function subFrustumSphereIntersectTest(
@@ -70,8 +78,8 @@ export function subFrustumSphereIntersectTest(
   const farZ = nearZ + tileDepth;
   const camForward = new Vector3();
   cam.getWorldDirection(camForward);
-  const nearPlaneOrigin = eye.add(camForward.multiplyScalar(nearZ));
-  const farPlaneOrigin = eye.add(camForward.multiplyScalar(farZ));
+  const nearPlaneOrigin = eye.clone().addScaledVector(camForward, nearZ);
+  const farPlaneOrigin = eye.clone().addScaledVector(camForward, farZ);
 
   const distTop = signedDist(sphere.center, top, eye);
   const distBot = signedDist(sphere.center, bottom, eye);

@@ -1,5 +1,5 @@
 import { PerspectiveCamera, Vector3 } from "three";
-import {getCorners} from "./helpers";
+import {getCorners, sub} from "./helpers";
 
 const EPSILON = 0.01;
 
@@ -11,10 +11,10 @@ beforeEach(() => {
 })
 
 function testApproxEq(v1: Vector3, v2: Vector3) {
-  expect(v1.manhattanDistanceTo(v2)).toBeLessThan(EPSILON);
+  expect(v1.clone().manhattanDistanceTo(v2)).toBeLessThan(EPSILON);
 }
 
-test("getPlaneNormalsOfSubFrustum 1 slice", () => {
+test("getCorners 1 slice", () => {
   const slices = new Vector3(1, 1, 1);
   const index = new Vector3(0, 0, 0);
 
@@ -22,8 +22,8 @@ test("getPlaneNormalsOfSubFrustum 1 slice", () => {
   console.log(getCorners(cam, slices, index));
 
   // check aspect ratio
-//  testApproxEq(ne.sub(se), nw.sub(sw));
-//  testApproxEq(ne.sub(nw), se.sub(sw));
+ testApproxEq(sub(ne, se), sub(nw, sw));
+ testApproxEq(sub(ne, nw), sub(se, sw));
 
-//  expect(ne.sub(se).length() * cam.aspect).toBeCloseTo(ne.sub(nw).length());
+ expect(sub(ne, se).length() * cam.aspect).toBeCloseTo(sub(ne, nw).length());
 });
