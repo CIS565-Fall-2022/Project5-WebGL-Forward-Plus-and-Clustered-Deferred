@@ -53,8 +53,8 @@ export function getPlaneNormalsOfSubFrustum(cam: PerspectiveCamera, slices: Vect
   const right = cross(ne, se).applyQuaternion(quat).normalize();
   const bottom = cross(se, sw).applyQuaternion(quat).normalize();
   const left = cross(sw, nw).applyQuaternion(quat).normalize();
-  const near = new Vector3(0, 0, 1).applyQuaternion(quat);
-  const far = new Vector3(0, 0, -1).applyQuaternion(quat);
+  const near = new Vector3(0, 0, -1).applyQuaternion(quat);
+  const far = new Vector3(0, 0, 1).applyQuaternion(quat);
 
   return {top, right, bottom, left, near, far};
 }
@@ -81,6 +81,10 @@ export function subFrustumSphereIntersectTest(
   const farZ = nearZ + tileDepth;
   const camForward = new Vector3();
   cam.getWorldDirection(camForward);
+
+  // console.log(camForward);
+  // console.log(tileDepth, nearZ, farZ);
+
   const nearPlaneOrigin = eye.clone().addScaledVector(camForward, nearZ);
   const farPlaneOrigin = eye.clone().addScaledVector(camForward, farZ);
 
@@ -90,6 +94,8 @@ export function subFrustumSphereIntersectTest(
   const distRight = signedDist(sphere.center, right, eye);
   const distNear = signedDist(sphere.center, near, nearPlaneOrigin);
   const distFar = signedDist(sphere.center, far, farPlaneOrigin);
+
+  // console.log({distTop, distBot, distLeft, distRight, distNear, distFar});
 
   return -distTop < sphere.radius && -distBot < sphere.radius
     && -distLeft < sphere.radius && -distRight < sphere.radius
