@@ -12,9 +12,7 @@
     "spectorjs": "0.9.27",
     "stats-js": "1.0.1",
     "terser-webpack-plugin": "^5.2.4",
-    "three": "0.133.1",
-    "three-js": "79.0.0",
-    "three-orbitcontrols": "2.110.2",
+    "three": "^0.133.1",
     "webgl-debug": "2.0.1"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 import { PerspectiveCamera, Vector3 } from "three";
-import {getCorners, getPlaneNormalsOfSubFrustum, sub, neg, subFrustumSphereIntersectTest} from "./helpers";
+import {getCorners, getPlaneNormalsOfSubFrustum, vec3Sub, vec3Neg, subFrustumSphereIntersectTest} from "./helpers";
 
 const EPSILON = 0.01;
 
@@ -21,10 +21,10 @@ test("getCorners 1 slice", () => {
   const {ne, nw, se, sw} = getCorners(cam, slices, index, new Vector3(1, 1, 1));
 
   // check aspect ratio
- testApproxEq(sub(ne, se), sub(nw, sw));
- testApproxEq(sub(ne, nw), sub(se, sw));
+ testApproxEq(vec3Sub(ne, se), vec3Sub(nw, sw));
+ testApproxEq(vec3Sub(ne, nw), vec3Sub(se, sw));
 
- expect(sub(ne, se).length() * cam.aspect).toBeCloseTo(sub(ne, nw).length());
+ expect(vec3Sub(ne, se).length() * cam.aspect).toBeCloseTo(vec3Sub(ne, nw).length());
 });
 
 test("getCorners 4 slice top right", () => {
@@ -32,9 +32,9 @@ test("getCorners 4 slice top right", () => {
   const index = new Vector3(1, 0, 0); // top right corner
 
   const {ne, nw, se, sw} = getCorners(cam, slices, index, new Vector3(1, 1, 1));
-  testApproxEq(sub(ne, se), sub(nw, sw));
-  testApproxEq(sub(ne, nw), sub(se, sw));
-  expect(sub(ne, se).length() * cam.aspect).toBeCloseTo(sub(ne, nw).length());
+  testApproxEq(vec3Sub(ne, se), vec3Sub(nw, sw));
+  testApproxEq(vec3Sub(ne, nw), vec3Sub(se, sw));
+  expect(vec3Sub(ne, se).length() * cam.aspect).toBeCloseTo(vec3Sub(ne, nw).length());
 
   expect(nw.x).toBeCloseTo(0);
   expect(sw.x).toBeCloseTo(0);
@@ -47,7 +47,7 @@ test("getPlaneNormalOfSubFrustum 1 slice", () => {
   const index = new Vector3(0, 0, 0);
 
   const {top, right, bottom, left, near, far} = getPlaneNormalsOfSubFrustum(cam, slices, index, new Vector3(1, 1, 1));
-  testApproxEq(near, neg(far));
+  testApproxEq(near, vec3Neg(far));
 });
 
 test("getPlaneNormalOfSubFrustum 9 slice", () => {
@@ -57,9 +57,9 @@ test("getPlaneNormalOfSubFrustum 9 slice", () => {
   const normsTopMid = getPlaneNormalsOfSubFrustum(cam, slices, new Vector3(1, 0, 0), new Vector3(1, 1, 1));
   const normsCenter = getPlaneNormalsOfSubFrustum(cam, slices, new Vector3(1, 1, 0), new Vector3(1, 1, 1));
 
-  testApproxEq(normsTopLeft.right, neg(normsTopMid.left));
-  testApproxEq(normsTopLeft.right, neg(normsCenter.left));
-  testApproxEq(normsTopMid.bottom, neg(normsCenter.top));
+  testApproxEq(normsTopLeft.right, vec3Neg(normsTopMid.left));
+  testApproxEq(normsTopLeft.right, vec3Neg(normsCenter.left));
+  testApproxEq(normsTopMid.bottom, vec3Neg(normsCenter.top));
 });
 
 test("getPlaneNormalOfSubFrustum 9 slice with look at", () => {
@@ -70,9 +70,9 @@ test("getPlaneNormalOfSubFrustum 9 slice with look at", () => {
   const normsTopMid = getPlaneNormalsOfSubFrustum(cam, slices, new Vector3(1, 0, 0), new Vector3(1, 1, 1));
   const normsCenter = getPlaneNormalsOfSubFrustum(cam, slices, new Vector3(1, 1, 0), new Vector3(1, 1, 1));
 
-  testApproxEq(normsTopLeft.right, neg(normsTopMid.left));
-  testApproxEq(normsTopLeft.right, neg(normsCenter.left));
-  testApproxEq(normsTopMid.bottom, neg(normsCenter.top));
+  testApproxEq(normsTopLeft.right, vec3Neg(normsTopMid.left));
+  testApproxEq(normsTopLeft.right, vec3Neg(normsCenter.left));
+  testApproxEq(normsTopMid.bottom, vec3Neg(normsCenter.top));
 });
 
 test("subFrustumSphereIntersectTest should be true for point we're looking at, false if not looking at", () => {

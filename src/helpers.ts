@@ -10,15 +10,18 @@ export type Sphere = {
   radius: number;
 }
 
-export function sub(v1: Vector3, v2: Vector3) {
-  return v1.clone().sub(v2);
+export function vec3Sub(v1: Vector3, v2: Vector3) {
+  // no idea why clone doesn't work here
+  const res = new Vector3();
+  res.copy(v1);
+  return res.sub(v2);
 }
 
-export function cross(v1: Vector3, v2: Vector3) {
+export function vec3Cross(v1: Vector3, v2: Vector3) {
   return v1.clone().cross(v2);
 }
 
-export function neg(v1: Vector3) {
+export function vec3Neg(v1: Vector3) {
   return v1.clone().negate();
 }
 
@@ -63,10 +66,10 @@ export function getPlaneNormalsOfSubFrustum(
   const quat = new Quaternion();
   cam.getWorldQuaternion(quat);
 
-  const top = cross(nw, ne).applyQuaternion(quat).normalize();
-  const right = cross(ne, se).applyQuaternion(quat).normalize();
-  const bottom = cross(se, sw).applyQuaternion(quat).normalize();
-  const left = cross(sw, nw).applyQuaternion(quat).normalize();
+  const top = vec3Cross(nw, ne).applyQuaternion(quat).normalize();
+  const right = vec3Cross(ne, se).applyQuaternion(quat).normalize();
+  const bottom = vec3Cross(se, sw).applyQuaternion(quat).normalize();
+  const left = vec3Cross(sw, nw).applyQuaternion(quat).normalize();
   const near = new Vector3(0, 0, -1).applyQuaternion(quat);
   const far = new Vector3(0, 0, 1).applyQuaternion(quat);
 
@@ -77,7 +80,7 @@ export function getPlaneNormalsOfSubFrustum(
 // dist is negative if on incorrect side, but if its abs value is less than sphere radius
 // it might still be counted as overlapping
 function signedDist(point: Vector3, planeNormal: Vector3, planeOrig: Vector3) {
-  return sub(point, planeOrig).dot(planeNormal);
+  return vec3Sub(point, planeOrig).dot(planeNormal);
 }
 
 // End index is NOT inclusive

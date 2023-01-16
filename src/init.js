@@ -5,7 +5,7 @@ import DAT from 'dat.gui';
 import WebGLDebug from 'webgl-debug';
 import Stats from 'stats-js';
 import { PerspectiveCamera } from 'three';
-import OrbitControls from 'three-orbitcontrols';
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Spector } from 'spectorjs';
 
 export var ABORTED = false;
