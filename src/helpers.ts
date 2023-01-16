@@ -2,7 +2,7 @@ import { PerspectiveCamera, Quaternion, Vector3 } from "three";
 
 // not necessarily equal to camera near and far clip planes
 // for grouping light clusters
-export const FRUSTUM_NEAR_DEPTH = 20;
+export const FRUSTUM_NEAR_DEPTH = 1;
 export const FRUSTUM_FAR_DEPTH = 1000;
 
 export type Sphere = {
@@ -22,7 +22,12 @@ export function neg(v1: Vector3) {
   return v1.clone().negate();
 }
 
-export function getCorners(cam: PerspectiveCamera, slices: Vector3, index: Vector3) {
+export function getCorners(
+  cam: PerspectiveCamera,
+  slices: Vector3,
+  index: Vector3,
+  size: Vector3,
+) {
   // reference: http://davidlively.com/programming/graphics/frustum-calculation-and-culling-hopefully-demystified/
   // However, instead of using the corners of the frustum/near clip plane intersect
   // we use corners of a subfrustum
@@ -35,9 +40,9 @@ export function getCorners(cam: PerspectiveCamera, slices: Vector3, index: Vecto
 
   // Index should use origin at TOP LEFT corner of screen
   const xLeft = -hw + index.x * tileWidth;
-  const xRight = xLeft + tileWidth;
+  const xRight = xLeft + tileWidth * size.x;
   const yTop = hh - index.y * tileHeight;
-  const yBot = yTop - tileHeight;
+  const yBot = yTop - tileHeight * size.y;
 
   const nw = new Vector3(xLeft, yTop, 1);
   const ne = new Vector3(xRight, yTop, 1);
@@ -47,8 +52,13 @@ export function getCorners(cam: PerspectiveCamera, slices: Vector3, index: Vecto
   return {nw, ne, se, sw};
 }
 
-export function getPlaneNormalsOfSubFrustum(cam: PerspectiveCamera, slices: Vector3, index: Vector3) {
-  const {nw, ne, se, sw} = getCorners(cam, slices, index);
+export function getPlaneNormalsOfSubFrustum(
+  cam: PerspectiveCamera,
+  slices: Vector3,
+  index: Vector3,
+  size: Vector3,
+) {
+  const {nw, ne, se, sw} = getCorners(cam, slices, index, size);
 
   const quat = new Quaternion();
   cam.getWorldQuaternion(quat);
@@ -70,13 +80,15 @@ function signedDist(point: Vector3, planeNormal: Vector3, planeOrig: Vector3) {
   return sub(point, planeOrig).dot(planeNormal);
 }
 
+// End index is NOT inclusive
 export function subFrustumSphereIntersectTest(
   cam: PerspectiveCamera,
   slices: Vector3,
   index: Vector3,
+  size: Vector3,
   sphere: Sphere,
 ) {
-  const {top, right, bottom, left, near, far} = getPlaneNormalsOfSubFrustum(cam, slices, index);
+  const {top, right, bottom, left, near, far} = getPlaneNormalsOfSubFrustum(cam, slices, index, size);
 
   // console.log(getPlaneNormalsOfSubFrustum(cam, slices, index));
 
@@ -85,7 +97,7 @@ export function subFrustumSphereIntersectTest(
 
   const tileDepth = (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) / slices.z;
   const nearZ: number = FRUSTUM_NEAR_DEPTH + index.z * tileDepth;
-  const farZ = nearZ + tileDepth;
+  const farZ = nearZ + tileDepth * size.z;
   const camForward = new Vector3();
   cam.getWorldDirection(camForward);
   camForward.normalize();
