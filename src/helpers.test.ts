@@ -1,5 +1,5 @@
 import { PerspectiveCamera, Vector3 } from "three";
-import {getCorners, getPlaneNormalsOfSubFrustum, sub, subFrustumSphereIntersectTest} from "./helpers";
+import {getCorners, getPlaneNormalsOfSubFrustum, sub, neg, subFrustumSphereIntersectTest} from "./helpers";
 
 const EPSILON = 0.01;
 
@@ -12,10 +12,6 @@ beforeEach(() => {
 
 function testApproxEq(v1: Vector3, v2: Vector3) {
   expect(v1.clone().manhattanDistanceTo(v2)).toBeLessThan(EPSILON);
-}
-
-function neg(v1: Vector3) {
-  return v1.clone().negate();
 }
 
 test("getCorners 1 slice", () => {
@@ -79,11 +75,34 @@ test("getPlaneNormalOfSubFrustum 9 slice with look at", () => {
   testApproxEq(normsTopMid.bottom, neg(normsCenter.top));
 });
 
-test("subFrustumSphereIntersectTest should be true for point we're looking at", () => {
+test("subFrustumSphereIntersectTest should be true for point we're looking at, false if not looking at", () => {
   const slices = new Vector3(1, 1, 1);
   const index = new Vector3(0, 0, 0);
 
-  const point = new Vector3(10, -3, 5);
+  for (let i = 0; i < 10; ++i) {
+    const point = new Vector3(Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50);
+    cam.position.set(Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50);
+    cam.lookAt(point);
+
+    expect(subFrustumSphereIntersectTest(cam, slices, index, {
+      center: point,
+      radius: 0,
+    })).toBeTruthy();
+
+    cam.rotation.set(Math.PI, 0, 0);
+
+    expect(subFrustumSphereIntersectTest(cam, slices, index, {
+      center: point,
+      radius: 0,
+    })).toBeFalsy();
+  }
+});
+
+test("subFrustumSphereIntersectTest sliced", () => {
+  const slices = new Vector3(3, 5, 1);
+  const index = new Vector3(1, 2, 0);
+
+  const point = new Vector3(-8, 70, 5);
   cam.lookAt(point);
 
   expect(subFrustumSphereIntersectTest(cam, slices, index, {
