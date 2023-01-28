@@ -2,16 +2,15 @@ const glsl = String.raw;
 
 export default function(params) {
   return glsl`
-  // TODO: This is pretty much just a clone of forward.frag.glsl.js
 
   #version 100
   // replace the string interpolation with a number for VScode glsl linting extension to work
   #define NUM_LIGHTS ${params.numLights}
-  #define X_SLICES ${params.xSlices}.0
-  #define Y_SLICES ${params.ySlices}.0
-  #define Z_SLICES ${params.zSlices}.0
-  #define FRUSTUM_NEAR_DEPTH ${params.frustumNearDepth}.0
-  #define FRUSTUM_FAR_DEPTH ${params.frustumFarDepth}.0
+  #define X_SLICES ${params.xSlices.toFixed(20)}
+  #define Y_SLICES ${params.ySlices.toFixed(20)}
+  #define Z_SLICES ${params.zSlices.toFixed(20)}
+  #define FRUSTUM_NEAR_DEPTH ${params.frustumNearDepth.toFixed(20)}
+  #define FRUSTUM_FAR_DEPTH ${params.frustumFarDepth.toFixed(20)}
 
   precision highp float;
 
@@ -93,8 +92,31 @@ export default function(params) {
 
     vec3 fragColor = vec3(0.0);
 
-    for (int i = 0; i < NUM_LIGHTS; ++i) {
-      Light light = UnpackLight(i);
+    // about gl_FragCoord: xy coordinates are literally array index if image is pixel array
+    // Getting tile coordinate: get tile xy based on pixel position -> (0, screen_x or y) to (0, 15)
+    // get z coordinate based on depth taking tile near/far clip distances into account -> (1, 1000) to (0, 15)
+    float cluster_x = floor(gl_FragCoord.x * X_SLICES / u_screenSize.x);
+    float cluster_y = floor(gl_FragCoord.y * Y_SLICES / u_screenSize.y);
+    float depth = gl_FragCoord.z / gl_FragCoord.w; // positive depth away from camera
+    float cluster_z = floor(clamp((depth - FRUSTUM_NEAR_DEPTH) * Z_SLICES
+      / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH), 0.0, Z_SLICES - 1.0));
+
+    float cluster_idx = cluster_x + cluster_y * X_SLICES + cluster_z * X_SLICES * Y_SLICES;
+
+    float texture_x = cluster_idx / (X_SLICES * Y_SLICES * Z_SLICES);
+    int num_lights_in_cluster = int(texture2D(u_clusterbuffer, vec2(texture_x, 0.0)).r);
+
+    for (int i = 1; i <= NUM_LIGHTS + 1; ++i) {
+      if (i > num_lights_in_cluster) {
+        break;
+      }
+
+      float texture_height = float(NUM_LIGHTS + 1);
+
+      float texture_y = float(i) / texture_height; // height of image is num_lights + 1
+      int light_idx = int(texture2D(u_clusterbuffer, vec2(texture_x, texture_y)).r);
+
+      Light light = UnpackLight(light_idx);
       float lightDistance = distance(light.position, v_position);
       vec3 L = (light.position - v_position) / lightDistance;
 
@@ -104,30 +126,10 @@ export default function(params) {
       fragColor += albedo * lambertTerm * light.color * vec3(lightIntensity);
     }
 
-    // about gl_FragCoord: xy coordinates are literally array index if image is pixel array
-    // Getting tile coordinate: get tile xy based on pixel position -> (0, screen_x or y) to (0, 15)
-    // get z coordinate based on depth taking tile near/far clip distances into account -> (1, 1000) to (0, 15)
-    int cluster_x = int(gl_FragCoord.x * X_SLICES / u_screenSize.x);
-    int cluster_y = int(gl_FragCoord.y * Y_SLICES / u_screenSize.y);
-    float depth = gl_FragCoord.z / gl_FragCoord.w; // positive depth away from camera
-    int cluster_z = int(clamp((depth - FRUSTUM_NEAR_DEPTH) * Z_SLICES
-      / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH), 0.0, Z_SLICES - 1.0));
-
-    // float numLights = texture2D(u_clusterbuffer, vec3(cluster_xy, cluster_z));
-
-    // for (int i = 0; i < numLights; ++i) {
-      
-    // }
-
     const vec3 ambientLight = vec3(0.025);
     fragColor += albedo * ambientLight;
 
     gl_FragColor = vec4(fragColor, 1.0);
-
-    float cluster_x_float = float(cluster_x);
-    float cluster_y_float = float(cluster_y);
-    float cluster_z_float = float(cluster_z);
-    // gl_FragColor = vec4(0, 0, cluster_z_float / 15.0, 1.0);
   }
   `;
 }
