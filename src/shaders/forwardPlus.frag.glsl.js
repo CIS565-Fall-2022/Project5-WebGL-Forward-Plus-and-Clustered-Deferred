@@ -113,7 +113,7 @@ export default function(params) {
 
       float texture_height = float(NUM_LIGHTS + 1);
 
-      float texture_y = float(i) / texture_height; // height of image is num_lights + 1
+      float texture_y = 1.0 - float(i) / texture_height; // height of image is num_lights + 1
       int light_idx = int(texture2D(u_clusterbuffer, vec2(texture_x, texture_y)).r);
 
       Light light = UnpackLight(light_idx);

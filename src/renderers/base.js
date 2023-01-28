@@ -41,11 +41,12 @@ export default class BaseRenderer {
             const size = new Vector3(1, 1, 1);
 
             const isInsideCluster = subFrustumSphereIntersectTest(camera, slices, index, size, {
-              center: light.position,
+              center: new Vector3(light.position[0], light.position[1], light.position[2]),
               radius: light.radius,
             });
 
             if (isInsideCluster) {
+              // console.log(`Add light ${i} to cluster (${x}, ${y}, ${z})`);
               this._clusterTexture.buffer[this._clusterTexture.bufferIndex(bufferIdx, ++lightCount)] = i; // put in r component 
             }
           }
