@@ -7,6 +7,11 @@ export default function(params) {
   #version 100
   // replace the string interpolation with a number for VScode glsl linting extension to work
   #define NUM_LIGHTS ${params.numLights}
+  #define X_SLICES ${params.xSlices}.0
+  #define Y_SLICES ${params.ySlices}.0
+  #define Z_SLICES ${params.zSlices}.0
+  #define FRUSTUM_NEAR_DEPTH ${params.frustumNearDepth}.0
+  #define FRUSTUM_FAR_DEPTH ${params.frustumFarDepth}.0
 
   precision highp float;
 
@@ -16,6 +21,8 @@ export default function(params) {
 
   // TODO: Read this buffer to determine the lights influencing a cluster
   uniform sampler2D u_clusterbuffer;
+
+  uniform vec2 u_screenSize;
 
   varying vec3 v_position;
   varying vec3 v_normal;
@@ -97,10 +104,30 @@ export default function(params) {
       fragColor += albedo * lambertTerm * light.color * vec3(lightIntensity);
     }
 
+    // about gl_FragCoord: xy coordinates are literally array index if image is pixel array
+    // Getting tile coordinate: get tile xy based on pixel position -> (0, screen_x or y) to (0, 15)
+    // get z coordinate based on depth taking tile near/far clip distances into account -> (1, 1000) to (0, 15)
+    int cluster_x = int(gl_FragCoord.x * X_SLICES / u_screenSize.x);
+    int cluster_y = int(gl_FragCoord.y * Y_SLICES / u_screenSize.y);
+    float depth = gl_FragCoord.z / gl_FragCoord.w; // positive depth away from camera
+    int cluster_z = int(clamp((depth - FRUSTUM_NEAR_DEPTH) * Z_SLICES
+      / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH), 0.0, Z_SLICES - 1.0));
+
+    // float numLights = texture2D(u_clusterbuffer, vec3(cluster_xy, cluster_z));
+
+    // for (int i = 0; i < numLights; ++i) {
+      
+    // }
+
     const vec3 ambientLight = vec3(0.025);
     fragColor += albedo * ambientLight;
 
     gl_FragColor = vec4(fragColor, 1.0);
+
+    float cluster_x_float = float(cluster_x);
+    float cluster_y_float = float(cluster_y);
+    float cluster_z_float = float(cluster_z);
+    // gl_FragColor = vec4(0, 0, cluster_z_float / 15.0, 1.0);
   }
   `;
 }

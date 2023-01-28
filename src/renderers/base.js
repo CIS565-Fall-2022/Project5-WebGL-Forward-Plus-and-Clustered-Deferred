@@ -26,33 +26,33 @@ export default class BaseRenderer {
 
     const slices = new Vector3(this._xSlices, this._ySlices, this._zSlices);
 
-    for (let z = 0; z < this._zSlices; ++z) {
-      for (let y = 0; y < this._ySlices; ++y) {
-        for (let x = 0; x < this._xSlices; ++x) {
+    // for (let z = 0; z < this._zSlices; ++z) {
+    //   for (let y = 0; y < this._ySlices; ++y) {
+    //     for (let x = 0; x < this._xSlices; ++x) {
           
-          const bufferIdx = this.getIndex1D(x, y, z);
+    //       const bufferIdx = this.getIndex1D(x, y, z);
           
-          let lightCount = 0;
+    //       let lightCount = 0;
 
-          for (let i = 0; i < NUM_LIGHTS; ++i) {
-            const light = scene.lights[i];
-            const index = new Vector3(x, y, z);
-            const size = new Vector3(1, 1, 1);
+    //       for (let i = 0; i < NUM_LIGHTS; ++i) {
+    //         const light = scene.lights[i];
+    //         const index = new Vector3(x, y, z);
+    //         const size = new Vector3(1, 1, 1);
 
-            const isInsideCluster = subFrustumSphereIntersectTest(camera, slices, index, size, {
-              center: light.position,
-              radius: light.radius,
-            });
+    //         const isInsideCluster = subFrustumSphereIntersectTest(camera, slices, index, size, {
+    //           center: light.position,
+    //           radius: light.radius,
+    //         });
 
-            if (isInsideCluster) {
-              this._clusterTexture.buffer[this._clusterTexture.bufferIndex(bufferIdx, ++lightCount)] = i; 
-            }
-          }
+    //         if (isInsideCluster) {
+    //           this._clusterTexture.buffer[this._clusterTexture.bufferIndex(bufferIdx, ++lightCount)] = i; 
+    //         }
+    //       }
 
-          this._clusterTexture.buffer[this._clusterTexture.bufferIndex(bufferIdx, 0)] = lightCount;
-        }
-      }
-    }
+    //       this._clusterTexture.buffer[this._clusterTexture.bufferIndex(bufferIdx, 0)] = lightCount;
+    //     }
+    //   }
+    // }
 
     // Just search each frustum grid cell and check if light fits in it
     // TODO: binary search for more effective culling

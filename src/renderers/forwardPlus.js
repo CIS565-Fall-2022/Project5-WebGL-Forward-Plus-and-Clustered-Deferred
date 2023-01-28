@@ -5,6 +5,7 @@ import { NUM_LIGHTS } from '../scene';
 import vsSource from '../shaders/forwardPlus.vert.glsl';
 import fsSource from '../shaders/forwardPlus.frag.glsl.js';
 import TextureBuffer from './textureBuffer';
+import {FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH} from "../scene.js";
 import BaseRenderer from './base';
 
 export default class ForwardPlusRenderer extends BaseRenderer {
@@ -16,8 +17,13 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     
     this._shaderProgram = loadShaderProgram(vsSource, fsSource({
       numLights: NUM_LIGHTS,
+      xSlices: xSlices,
+      ySlices: ySlices,
+      zSlices: zSlices,
+      frustumNearDepth: FRUSTUM_NEAR_DEPTH,
+      frustumFarDepth: FRUSTUM_FAR_DEPTH,
     }), {
-      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer'],
+      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer', 'u_screenSize'],
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
@@ -76,6 +82,7 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     gl.uniform1i(this._shaderProgram.u_clusterbuffer, 3);
 
     // TODO: Bind any other shader inputs
+    gl.uniform2f(this._shaderProgram.u_screenSize, gl.canvas.width, gl.canvas.height);
 
     // Draw the scene. This function takes the shader program so that the model's textures can be bound to the right inputs
     scene.draw(this._shaderProgram);

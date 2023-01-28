@@ -1,9 +1,5 @@
 import { PerspectiveCamera, Quaternion, Vector3 } from "three";
-
-// not necessarily equal to camera near and far clip planes
-// for grouping light clusters
-export const FRUSTUM_NEAR_DEPTH = 1;
-export const FRUSTUM_FAR_DEPTH = 1000;
+import {FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH} from "./scene.js";
 
 export type Sphere = {
   center: Vector3;
