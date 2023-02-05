@@ -21,8 +21,15 @@ export default class BaseRenderer {
   getIndex1D(x, y, z) {
     return x + y * this._xSlices + z * this._xSlices * this._ySlices;
   }
+  
+  getIndex3D(i) {
+    const z = Math.floor(i / ( this._xSlices * this._ySlices));
+    const y = Math.floor((i - (z * this._xSlices * this._ySlices)) / this._xSlices);
+    const x = i % this._xSlices;
+    return {x, y, z};
+  }
 
-  updateClusters(camera, viewMatrix, scene) { // view matrix is for transforming the lights
+  updateClusters(camera, viewMatrix, scene, debug) { // view matrix is for transforming the lights
     
     // TODO: Update the cluster texture with the count and indices of the lights in each cluster
     // This will take some time. The math is nontrivial...
@@ -37,24 +44,30 @@ export default class BaseRenderer {
       }
     }
 
+    let clusterLights = new Map();
+
     // Above method is too slow and also may not be working.
     for (let i = 0; i < NUM_LIGHTS; ++i) {
 
       // project sphere light position into camera view space
       const light = scene.lights[i];
       const lightCenter = new Vector3(light.position[0], light.position[1], light.position[2]);
+      const radius = light.radius;
       lightCenter.applyMatrix4(camera.matrixWorldInverse); // camera.matrixWorldInverse is the view matrix
 
-      // after untransforming, camera is facing -z direction
-      // take bounding box aligned with camera space
-      const bbMin = lightCenter.clone().sub(new Vector3(light.radius, light.radius, -light.radius));
-      const bbMax = lightCenter.clone().add(new Vector3(light.radius, light.radius, -light.radius));
+      // debugger;
 
-      // find z indices of bounding box corners using the predetermined near and far depths
+      // after untransforming, camera is facing -z direction
+      // take bounding rectangle aligned with camera space
+      // the bottom left and top right points would have the same z coordinate
+      const bbMin = lightCenter.clone().sub(new Vector3(radius, radius, 0));
+      const bbMax = lightCenter.clone().add(new Vector3(radius, radius, 0));
+
+      // find min and max z coords using the predetermined near and far depths
       // these are different necessarily from camera near/far clip planes
-      const zMin = (-bbMin.z - FRUSTUM_NEAR_DEPTH)
+      const zMin = ((-lightCenter.z - radius) - FRUSTUM_NEAR_DEPTH)
         / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) * this._zSlices;
-      const zMax = (-bbMax.z - FRUSTUM_NEAR_DEPTH)
+      const zMax = ((-lightCenter.z + radius) - FRUSTUM_NEAR_DEPTH)
         / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) * this._zSlices;
 
       // find xy indices of bounding box corners by using projection matrix
@@ -79,31 +92,46 @@ export default class BaseRenderer {
       const xMinClamped = Math.floor(Math.max(0, xMin));
       const yMinClamped = Math.floor(Math.max(0, yMin));
       const zMinClamped = Math.floor(Math.max(0, zMin));
-      const xMaxClamped = Math.min(xMax, this._xSlices - 1); // no need for floor/ceil because we're using as upper bound
-      const yMaxClamped = Math.min(yMax, this._ySlices - 1);
-      const zMaxClamped = Math.min(zMax, this._zSlices - 1);
+      const xMaxClamped = Math.floor(Math.min(xMax, this._xSlices - 1));
+      const yMaxClamped = Math.floor(Math.min(yMax, this._ySlices - 1));
+      const zMaxClamped = Math.floor(Math.min(zMax, this._zSlices - 1));
 
       // debugger;
 
-      for (let x = xMinClamped; x < xMaxClamped; x++) {
-        for (let y = yMinClamped; y < yMaxClamped; y++) {
-          for (let z = zMinClamped; z < zMaxClamped; z++) {
-
-            // console.log(x, y, z);
+      for (let x = xMinClamped; x <= xMaxClamped; x++) {
+        for (let y = yMinClamped; y <= yMaxClamped; y++) {
+          for (let z = zMinClamped; z <= zMaxClamped; z++) {
 
             const bufferIdx = this.getIndex1D(x, y, z);
             const lightIdx = this._clusterTexture.bufferIndex(bufferIdx, 0);
             // get light idx + 1 to offset the first element being used for light count 
-            const lightCountPlusOne = this._clusterTexture.buffer[lightIdx] + 1;
+            this._clusterTexture.buffer[lightIdx] += 1;
+            const lightCount = this._clusterTexture.buffer[lightIdx];
             
-            const pixel = Math.floor(lightCountPlusOne / 4);
-            const pixelComponent = lightCountPlusOne % 4;
-
-            // console.log(pixel, pixelComponent);
+            const pixel = Math.floor(lightCount / 4);
+            const pixelComponent = lightCount % 4;
 
             this._clusterTexture.buffer[this._clusterTexture.bufferIndex(bufferIdx, pixel) + pixelComponent] = i; // put in r component 
-            this._clusterTexture.buffer[lightIdx] += 1;
+
+            if (debug) {
+              const lights = clusterLights.get(bufferIdx);
+              if (lights) {
+                lights.push(lightCenter);
+              } else {
+                clusterLights = clusterLights.set(bufferIdx, [lightCenter]);
+              }
+            }
           }
+        }
+      }
+    }
+
+    if (debug) {
+      for (let i = 0; i < this._xSlices * this._ySlices * this._zSlices; ++i) {
+        const lights = clusterLights.get(i);
+        const {x, y, z} = this.getIndex3D(i);
+        if (lights) {
+          console.log(`Cluster ${x},${y},${z}: ${lights.length} lights: ${lights.map((l) => `(${l.x}, ${l.y}, ${l.z}\n)`)}`);
         }
       }
     }
