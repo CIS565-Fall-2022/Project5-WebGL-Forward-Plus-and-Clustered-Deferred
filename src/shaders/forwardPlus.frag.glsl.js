@@ -22,6 +22,7 @@ export default function(params) {
   uniform sampler2D u_clusterbuffer;
 
   uniform vec2 u_screenSize;
+  uniform mat4 u_viewMat; // for depth
 
   varying vec3 v_position;
   varying vec3 v_normal;
@@ -93,11 +94,13 @@ export default function(params) {
     vec3 fragColor = vec3(0.0);
 
     // about gl_FragCoord: xy coordinates are literally array index if image is pixel array
+    // default origin is at bottom left
     // Getting tile coordinate: get tile xy based on pixel position -> (0, screen_x or y) to (0, 15)
     // get z coordinate based on depth taking tile near/far clip distances into account -> (1, 1000) to (0, 15)
     float cluster_x = floor(gl_FragCoord.x * X_SLICES / u_screenSize.x);
     float cluster_y = floor(gl_FragCoord.y * Y_SLICES / u_screenSize.y);
-    float depth = gl_FragCoord.z / gl_FragCoord.w; // positive depth away from camera
+    // float depth = gl_FragCoord.z / gl_FragCoord.w;
+    float depth = -(u_viewMat * vec4(v_position, 1.0)).z;    // positive depth away from camera
     float cluster_z = floor(clamp((depth - FRUSTUM_NEAR_DEPTH) * Z_SLICES
       / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH), 0.0, Z_SLICES - 1.0));
 
@@ -127,6 +130,8 @@ export default function(params) {
     fragColor += albedo * ambientLight;
 
     gl_FragColor = vec4(fragColor, 1.0);
+    // gl_FragColor = vec4(0.0, 0.0, cluster_z / 15.0, 1.0);
+    // gl_FragColor = vec4(0.0, 0.0, depth / 10.0, 1.0);
   }
   `;
 }

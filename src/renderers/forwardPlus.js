@@ -23,7 +23,7 @@ export default class ForwardPlusRenderer extends BaseRenderer {
       frustumNearDepth: FRUSTUM_NEAR_DEPTH,
       frustumFarDepth: FRUSTUM_FAR_DEPTH,
     }), {
-      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer', 'u_screenSize'],
+      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer', 'u_screenSize', 'u_viewMat'],
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
@@ -83,6 +83,8 @@ export default class ForwardPlusRenderer extends BaseRenderer {
 
     // TODO: Bind any other shader inputs
     gl.uniform2f(this._shaderProgram.u_screenSize, gl.canvas.width, gl.canvas.height);
+
+    gl.uniformMatrix4fv(this._shaderProgram.u_viewMat, false, this._viewMatrix);
 
     // Draw the scene. This function takes the shader program so that the model's textures can be bound to the right inputs
     scene.draw(this._shaderProgram);
