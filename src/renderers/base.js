@@ -52,12 +52,10 @@ export default class BaseRenderer {
 
       // find z indices of bounding box corners using the predetermined near and far depths
       // these are different necessarily from camera near/far clip planes
-      const zMin = Math.floor(Math.max((-bbMin.z - FRUSTUM_NEAR_DEPTH)
-        / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) * this._zSlices, 0));
-      const zMax = Math.floor(Math.min((-bbMax.z - FRUSTUM_NEAR_DEPTH)
-        / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) * this._zSlices, this._zSlices - 1));
-
-      // TODO: zMin and zMax could be out of bounds
+      const zMin = (-bbMin.z - FRUSTUM_NEAR_DEPTH)
+        / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) * this._zSlices;
+      const zMax = (-bbMax.z - FRUSTUM_NEAR_DEPTH)
+        / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) * this._zSlices;
 
       // find xy indices of bounding box corners by using projection matrix
       // Multiplies this vector (with an implicit 1 in the 4th dimension) and m, and divides by perspective.
@@ -65,21 +63,46 @@ export default class BaseRenderer {
       bbMin.applyMatrix4(camera.projectionMatrix);
       bbMax.applyMatrix4(camera.projectionMatrix);
 
-      const xMin = Math.floor(Math.max((bbMin.x + 1) / 2 * this._xSlices), 0);
-      const xMax = Math.ceil(Math.min((bbMax.x + 1) / 2 * this._xSlices), this._xSlices - 1);
-      const yMin = Math.floor(Math.max((bbMin.y + 1) / 2 * this._ySlices), 0);
-      const yMax = Math.ceil(Math.min((bbMax.y + 1) / 2 * this._ySlices), this._ySlices - 1);
+      const xMin = (bbMin.x + 1) / 2 * this._xSlices;
+      const xMax = (bbMax.x + 1) / 2 * this._xSlices;
+      const yMin = (bbMin.y + 1) / 2 * this._ySlices;
+      const yMax = (bbMax.y + 1) / 2 * this._ySlices;
 
-      for (let x = xMin; x < xMax; x++) {
-        for (let y = yMin; y < yMax; y++) {
-          for (let z = zMin; z < zMax; z++) {
+      // Dealing with out of bounds
+      // If min is out of bounds in max direction or vice versa
+      // then the entire light is out of bounds, don't bother adding it to any clusters
+      if (xMin > this._xSlices - 1 || yMin > this._ySlices - 1 || zMin > this._zSlices - 1
+        || xMax < 0 || yMax < 0 || zMax < 0) {
+        continue;
+      }
+      // Otherwise, clamp min and max bounds
+      const xMinClamped = Math.floor(Math.max(0, xMin));
+      const yMinClamped = Math.floor(Math.max(0, yMin));
+      const zMinClamped = Math.floor(Math.max(0, zMin));
+      const xMaxClamped = Math.min(xMax, this._xSlices - 1); // no need for floor/ceil because we're using as upper bound
+      const yMaxClamped = Math.min(yMax, this._ySlices - 1);
+      const zMaxClamped = Math.min(zMax, this._zSlices - 1);
+
+      // debugger;
+
+      for (let x = xMinClamped; x < xMaxClamped; x++) {
+        for (let y = yMinClamped; y < yMaxClamped; y++) {
+          for (let z = zMinClamped; z < zMaxClamped; z++) {
+
+            // console.log(x, y, z);
+
             const bufferIdx = this.getIndex1D(x, y, z);
             const lightIdx = this._clusterTexture.bufferIndex(bufferIdx, 0);
+            // get light idx + 1 to offset the first element being used for light count 
+            const lightCountPlusOne = this._clusterTexture.buffer[lightIdx] + 1;
+            
+            const pixel = Math.floor(lightCountPlusOne / 4);
+            const pixelComponent = lightCountPlusOne % 4;
 
-            const lightCount = this._clusterTexture.buffer[lightIdx];
-            this._clusterTexture.buffer[this._clusterTexture.bufferIndex(bufferIdx, lightCount + 1)] = i; // put in r component 
-            // increment light count
-            this._clusterTexture.buffer[lightIdx]++;
+            // console.log(pixel, pixelComponent);
+
+            this._clusterTexture.buffer[this._clusterTexture.bufferIndex(bufferIdx, pixel) + pixelComponent] = i; // put in r component 
+            this._clusterTexture.buffer[lightIdx] += 1;
           }
         }
       }
