@@ -55,7 +55,7 @@ export default class BaseRenderer {
       const zMin = Math.floor(Math.max((-bbMin.z - FRUSTUM_NEAR_DEPTH)
         / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) * this._zSlices, 0));
       const zMax = Math.floor(Math.min((-bbMax.z - FRUSTUM_NEAR_DEPTH)
-        / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) * this._zSlices, this._zSlices));
+        / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH) * this._zSlices, this._zSlices - 1));
 
       // TODO: zMin and zMax could be out of bounds
 
@@ -66,9 +66,9 @@ export default class BaseRenderer {
       bbMax.applyMatrix4(camera.projectionMatrix);
 
       const xMin = Math.floor(Math.max((bbMin.x + 1) / 2 * this._xSlices), 0);
-      const xMax = Math.ceil(Math.min((bbMax.x + 1) / 2 * this._xSlices), this._xSlices);
+      const xMax = Math.ceil(Math.min((bbMax.x + 1) / 2 * this._xSlices), this._xSlices - 1);
       const yMin = Math.floor(Math.max((bbMin.y + 1) / 2 * this._ySlices), 0);
-      const yMax = Math.ceil(Math.min((bbMax.y + 1) / 2 * this._ySlices), this._ySlices);
+      const yMax = Math.ceil(Math.min((bbMax.y + 1) / 2 * this._ySlices), this._ySlices - 1);
 
       for (let x = xMin; x < xMax; x++) {
         for (let y = yMin; y < yMax; y++) {
