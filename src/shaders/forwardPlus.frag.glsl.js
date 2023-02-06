@@ -6,6 +6,7 @@ export default function(params) {
   #version 100
   // replace the string interpolation with a number for VScode glsl linting extension to work
   #define NUM_LIGHTS ${params.numLights}
+  #define MAX_LIGHTS_PER_CLUSTER ${params.maxLightsPerCluster}
   #define X_SLICES ${params.xSlices.toFixed(20)}
   #define Y_SLICES ${params.ySlices.toFixed(20)}
   #define Z_SLICES ${params.zSlices.toFixed(20)}
@@ -106,15 +107,15 @@ export default function(params) {
 
     int cluster_idx = int(cluster_x + cluster_y * X_SLICES + cluster_z * X_SLICES * Y_SLICES);
     int texture_width = int(X_SLICES * Y_SLICES * Z_SLICES);
-    int texture_height = int(NUM_LIGHTS + 1);
+    int texture_height = int(MAX_LIGHTS_PER_CLUSTER + 1);
     int num_lights_in_cluster = int(ExtractFloat(u_clusterbuffer, texture_width, texture_height, cluster_idx, 0));
 
-    for (int i = 1; i <= NUM_LIGHTS + 1; ++i) {
+    for (int i = 1; i <= MAX_LIGHTS_PER_CLUSTER + 1; ++i) {
       if (i > num_lights_in_cluster) {
         break;
       }
 
-      int light_idx = int(ExtractFloat(u_clusterbuffer, texture_width, texture_height, cluster_idx, i + 1));
+      int light_idx = int(ExtractFloat(u_clusterbuffer, texture_width, texture_height, cluster_idx, i));
 
       Light light = UnpackLight(light_idx);
       float lightDistance = distance(light.position, v_position);
@@ -130,8 +131,11 @@ export default function(params) {
     fragColor += albedo * ambientLight;
 
     gl_FragColor = vec4(fragColor, 1.0);
-    // gl_FragColor = vec4(0.0, 0.0, cluster_z / 15.0, 1.0);
-    // gl_FragColor = vec4(0.0, 0.0, depth / 10.0, 1.0);
+    // gl_FragColor = vec4(0.0, 0.0, depth / 15.0, 1.0);
+    // gl_FragColor = vec4(cluster_x / 15.0, cluster_y / 15.0, cluster_z / 15.0, 1.0);
+    // if (num_lights_in_cluster == 0) {
+    //   gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    // }
   }
   `;
 }

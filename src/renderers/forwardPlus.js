@@ -6,7 +6,7 @@ import vsSource from '../shaders/forwardPlus.vert.glsl';
 import fsSource from '../shaders/forwardPlus.frag.glsl.js';
 import TextureBuffer from './textureBuffer';
 import {FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH} from "../scene.js";
-import BaseRenderer from './base';
+import BaseRenderer, {MAX_LIGHTS_PER_CLUSTER} from './base';
 
 export default class ForwardPlusRenderer extends BaseRenderer {
   constructor(xSlices, ySlices, zSlices) {
@@ -17,6 +17,7 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     
     this._shaderProgram = loadShaderProgram(vsSource, fsSource({
       numLights: NUM_LIGHTS,
+      maxLightsPerCluster: MAX_LIGHTS_PER_CLUSTER,
       xSlices: xSlices,
       ySlices: ySlices,
       zSlices: zSlices,
@@ -40,7 +41,7 @@ export default class ForwardPlusRenderer extends BaseRenderer {
     mat4.multiply(this._viewProjectionMatrix, this._projectionMatrix, this._viewMatrix);
 
     // Update cluster texture which maps from cluster index to light list
-    this.updateClusters(camera, this._viewMatrix, scene, true);
+    this.updateClusters(camera, this._viewMatrix, scene);
     
     // Update the buffer used to populate the texture packed with light data
     for (let i = 0; i < NUM_LIGHTS; ++i) {

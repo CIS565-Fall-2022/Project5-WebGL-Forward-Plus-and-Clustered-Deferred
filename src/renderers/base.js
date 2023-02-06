@@ -103,15 +103,15 @@ export default class BaseRenderer {
           for (let z = zMinClamped; z <= zMaxClamped; z++) {
 
             const bufferIdx = this.getIndex1D(x, y, z);
-            const lightIdx = this._clusterTexture.bufferIndex(bufferIdx, 0);
+            const lightCountIdx = this._clusterTexture.bufferIndex(bufferIdx, 0);
             // get light idx + 1 to offset the first element being used for light count 
-            this._clusterTexture.buffer[lightIdx] += 1;
-            const lightCount = this._clusterTexture.buffer[lightIdx];
+            this._clusterTexture.buffer[lightCountIdx] += 1;
+            const lightCount = this._clusterTexture.buffer[lightCountIdx];
             
             const pixel = Math.floor(lightCount / 4);
             const pixelComponent = lightCount % 4;
 
-            this._clusterTexture.buffer[this._clusterTexture.bufferIndex(bufferIdx, pixel) + pixelComponent] = i; // put in r component 
+            this._clusterTexture.buffer[this._clusterTexture.bufferIndex(bufferIdx, pixel) + pixelComponent] = i;
 
             if (debug) {
               const lights = clusterLights.get(bufferIdx);
@@ -125,7 +125,7 @@ export default class BaseRenderer {
         }
       }
     }
-
+    
     if (debug) {
       for (let i = 0; i < this._xSlices * this._ySlices * this._zSlices; ++i) {
         const lights = clusterLights.get(i);
