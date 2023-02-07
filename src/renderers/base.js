@@ -115,10 +115,11 @@ export default class BaseRenderer {
 
             if (debug) {
               const lights = clusterLights.get(bufferIdx);
+              const untransformedLightPos = new Vector3(light.position[0], light.position[1], light.position[2]);
               if (lights) {
-                lights.push(lightCenter);
+                lights.push(untransformedLightPos);
               } else {
-                clusterLights = clusterLights.set(bufferIdx, [lightCenter]);
+                clusterLights = clusterLights.set(bufferIdx, [untransformedLightPos]);
               }
             }
           }
