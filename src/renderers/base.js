@@ -3,7 +3,7 @@ import {subFrustumSphereIntersectTest} from '../helpers'
 import { PerspectiveCamera, Vector3 } from 'three';
 import { NUM_LIGHTS, FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH } from '../scene';
 
-export const MAX_LIGHTS_PER_CLUSTER = 100;
+export const MAX_LIGHTS_PER_CLUSTER = NUM_LIGHTS;
 
 export default class BaseRenderer {
 
@@ -84,7 +84,7 @@ export default class BaseRenderer {
       // Dealing with out of bounds
       // If min is out of bounds in max direction or vice versa
       // then the entire light is out of bounds, don't bother adding it to any clusters
-      if (xMin > this._xSlices - 1 || yMin > this._ySlices - 1 || zMin > this._zSlices - 1
+      if (xMin > this._xSlices || yMin > this._ySlices || zMin > this._zSlices
         || xMax < 0 || yMax < 0 || zMax < 0) {
         continue;
       }
