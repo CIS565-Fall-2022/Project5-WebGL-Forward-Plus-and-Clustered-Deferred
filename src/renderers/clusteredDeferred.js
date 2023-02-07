@@ -1,13 +1,13 @@
 import { gl, WEBGL_draw_buffers, canvas } from '../init';
 import { mat4, vec4 } from 'gl-matrix';
 import { loadShaderProgram, renderFullscreenQuad } from '../utils';
-import { NUM_LIGHTS } from '../scene';
+import { NUM_LIGHTS, FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH } from '../scene';
 import toTextureVert from '../shaders/deferredToTexture.vert.glsl';
 import toTextureFrag from '../shaders/deferredToTexture.frag.glsl';
 import QuadVertSource from '../shaders/quad.vert.glsl';
 import fsSource from '../shaders/deferred.frag.glsl.js';
 import TextureBuffer from './textureBuffer';
-import BaseRenderer from './base';
+import BaseRenderer, {MAX_LIGHTS_PER_CLUSTER} from './base';
 
 export const NUM_GBUFFERS = 4;
 
@@ -28,8 +28,17 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     this._progShade = loadShaderProgram(QuadVertSource, fsSource({
       numLights: NUM_LIGHTS,
       numGBuffers: NUM_GBUFFERS,
+      maxLightsPerCluster: MAX_LIGHTS_PER_CLUSTER,
+      xSlices: xSlices,
+      ySlices: ySlices,
+      zSlices: zSlices,
+      frustumNearDepth: FRUSTUM_NEAR_DEPTH,
+      frustumFarDepth: FRUSTUM_FAR_DEPTH,
+      textureWidth: this._clusterTexture._elementCount,
+      textureHeight: this._clusterTexture._pixelsPerElement,
     }), {
-      uniforms: ['u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]'],
+      uniforms: ['u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
+        'u_screenSize', 'u_viewMat', 'u_clusterbuffer', 'u_lightbuffer'],
       attribs: ['a_uv'],
     });
 
@@ -154,6 +163,9 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     gl.useProgram(this._progShade.glShaderProgram);
 
     // TODO: Bind any other shader inputs
+    gl.uniform2f(this._progShade.u_screenSize, gl.canvas.width, gl.canvas.height);
+
+    gl.uniformMatrix4fv(this._progShade.u_viewMat, false, this._viewMatrix);
 
     // Bind g-buffers
     const firstGBufferBinding = 0; // You may have to change this if you use other texture slots
@@ -162,6 +174,16 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       gl.bindTexture(gl.TEXTURE_2D, this._gbuffers[i]);
       gl.uniform1i(this._progShade[`u_gbuffers[${i}]`], i + firstGBufferBinding);
     }
+
+    // Set the light texture as a uniform input to the shader
+    gl.activeTexture(gl[`TEXTURE${NUM_GBUFFERS}`]);
+    gl.bindTexture(gl.TEXTURE_2D, this._lightTexture.glTexture);
+    gl.uniform1i(this._progShade.u_lightbuffer, NUM_GBUFFERS);
+
+    // Set the cluster texture as a uniform input to the shader
+    gl.activeTexture(gl[`TEXTURE${NUM_GBUFFERS + 1}`]);
+    gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
+    gl.uniform1i(this._progShade.u_clusterbuffer, NUM_GBUFFERS + 1);
 
     renderFullscreenQuad(this._progShade);
   }

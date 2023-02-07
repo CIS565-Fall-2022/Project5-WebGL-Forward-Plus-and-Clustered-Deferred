@@ -1,11 +1,10 @@
 import { gl } from '../init';
 import { mat4, vec4, vec3 } from 'gl-matrix';
 import { loadShaderProgram } from '../utils';
-import { NUM_LIGHTS } from '../scene';
+import { NUM_LIGHTS, FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH } from '../scene';
 import vsSource from '../shaders/forwardPlus.vert.glsl';
 import fsSource from '../shaders/forwardPlus.frag.glsl.js';
 import TextureBuffer from './textureBuffer';
-import {FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH} from "../scene.js";
 import BaseRenderer, {MAX_LIGHTS_PER_CLUSTER} from './base';
 
 export default class ForwardPlusRenderer extends BaseRenderer {
