@@ -5,11 +5,30 @@ import { NUM_LIGHTS, FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH } from '../scene';
 import toTextureVert from '../shaders/deferredToTexture.vert.glsl';
 import toTextureFrag from '../shaders/deferredToTexture.frag.glsl';
 import QuadVertSource from '../shaders/quad.vert.glsl';
-import fsSource from '../shaders/deferred.frag.glsl.js';
+import deferredFsSource from '../shaders/deferred.frag.glsl.js';
+import bloomFsSource from '../shaders/deferredBloom.frag.glsl.js';
+import bloomGaussianSource from '../shaders/deferredBloomGaussian.frag.glsl';
+import bloomFinalSource from '../shaders/deferredBloomFinal.frag.glsl';
 import TextureBuffer from './textureBuffer';
 import BaseRenderer, {MAX_LIGHTS_PER_CLUSTER} from './base';
 
 export const NUM_GBUFFERS = 4;
+
+export const GAUSSIAN_KERNEL_11 = new Float32Array([
+  0.006849,	0.007239,	0.007559,	0.007795,	0.007941,	0.00799 ,       0.007941,	0.007795,	0.007559,	0.007239,	0.006849,
+  0.007239,	0.007653,	0.00799 ,        0.00824,       0.008394,	0.008446,	0.008394,	0.00824 ,        0.00799,       0.007653,	0.007239,
+  0.007559,	0.00799	,       0.008342,	0.008604,	0.008764,	0.008819,	0.008764,	0.008604,	0.008342,	0.00799 ,        0.007559,
+  0.007795,	0.00824	,       0.008604,	0.008873,	0.009039,	0.009095,	0.009039,	0.008873,	0.008604,	0.00824 ,        0.007795,
+  0.007941,	0.008394,	0.008764,	0.009039,	0.009208,	0.009265,	0.009208,	0.009039,	0.008764,	0.008394,	0.007941,
+  0.00799 ,   0.008446,	0.008819,	0.009095,	0.009265,	0.009322,	0.009265,	0.009095,	0.008819,	0.008446,	0.00799 ,
+  0.007941,	0.008394,	0.008764,	0.009039,	0.009208,	0.009265,	0.009208,	0.009039,	0.008764,	0.008394,	0.007941,
+  0.007795,	0.00824	,       0.008604,	0.008873,	0.009039,	0.009095,	0.009039,	0.008873,	0.008604,	0.00824 ,        0.007795,
+  0.007559,	0.00799	,       0.008342,	0.008604,	0.008764,	0.008819,	0.008764,	0.008604,	0.008342,	0.00799 ,        0.007559,
+  0.007239,	0.007653,	0.00799 ,        0.00824,       0.008394,	0.008446,	0.008394,	0.00824 ,        0.00799,       0.007653,	0.007239,
+  0.006849,	0.007239,	0.007559,	0.007795,	0.007941,	0.00799 ,       0.007941,	0.007795,	0.007559,	0.007239,	0.006849
+]);
+
+export const SHOW_BLOOM = true;
 
 export default class ClusteredDeferredRenderer extends BaseRenderer {
   constructor(xSlices, ySlices, zSlices) {
@@ -25,6 +44,8 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
+    const fsSource = SHOW_BLOOM ? bloomFsSource : deferredFsSource;
+
     this._progShade = loadShaderProgram(QuadVertSource, fsSource({
       numLights: NUM_LIGHTS,
       numGBuffers: NUM_GBUFFERS,
@@ -39,6 +60,16 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     }), {
       uniforms: ['u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
         'u_screenSize', 'u_viewMat', 'u_clusterbuffer', 'u_lightbuffer'],
+      attribs: ['a_uv'],
+    });
+
+    this._progBloomGaussian = loadShaderProgram(QuadVertSource, bloomGaussianSource, {
+      uniforms: ['u_brightBuffer', 'u_screenSize', 'u_gaussianKernel'],
+      attribs: ['a_uv'],
+    });
+
+    this._progBloomFinal = loadShaderProgram(QuadVertSource, bloomFinalSource, {
+      uniforms: ['u_blurBuffer', 'u_renderBuffer'],
       attribs: ['a_uv'],
     });
 
@@ -166,7 +197,7 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     gl.uniform2f(this._progShade.u_screenSize, gl.canvas.width, gl.canvas.height);
 
     gl.uniformMatrix4fv(this._progShade.u_viewMat, false, this._viewMatrix);
-
+  
     // Bind g-buffers
     const firstGBufferBinding = 0; // You may have to change this if you use other texture slots
     for (let i = 0; i < NUM_GBUFFERS; i++) {
@@ -185,6 +216,11 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
     gl.uniform1i(this._progShade.u_clusterbuffer, NUM_GBUFFERS + 1);
 
-    renderFullscreenQuad(this._progShade);
+    if (SHOW_BLOOM) {
+      // TODO:
+
+    } else {
+      renderFullscreenQuad(this._progShade);
+    }
   }
 };
