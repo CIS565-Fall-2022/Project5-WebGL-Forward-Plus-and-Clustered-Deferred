@@ -195,7 +195,6 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
 
     // TODO: Bind any other shader inputs
     gl.uniform2f(this._progShade.u_screenSize, gl.canvas.width, gl.canvas.height);
-
     gl.uniformMatrix4fv(this._progShade.u_viewMat, false, this._viewMatrix);
   
     // Bind g-buffers
@@ -217,7 +216,28 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     gl.uniform1i(this._progShade.u_clusterbuffer, NUM_GBUFFERS + 1);
 
     if (SHOW_BLOOM) {
-      // TODO:
+      // Gaussian blur for bloom
+      gl.useProgram(this._progBloomGaussian.glShaderProgram);
+
+      gl.activeTexture(gl[`TEXTURE1`]);
+      gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
+      gl.uniform1i(this._progBloomGaussian.u_brightBuffer, 1);
+
+      gl.uniform2f(this._progBloomGaussian.u_screenSize, gl.canvas.width, gl.canvas.height);
+      gl.uniform1fv(this._progBloomGaussian.u_gaussianKernel, GAUSSIAN_KERNEL_11);
+
+      // Combine gaussian blur + rendered image
+      gl.useProgram(this._progBloomFinal.glShaderProgram);
+
+      gl.activeTexture(gl[`TEXTURE0`]);
+      gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
+      gl.uniform1i(this._progBloomFinal.u_renderBuffer, 0);
+
+      gl.activeTexture(gl[`TEXTURE1`]);
+      gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
+      gl.uniform1i(this._progBloomFinal.u_blurBuffer, 1);
+
+      renderFullscreenQuad(this._progBloomFinal);
 
     } else {
       renderFullscreenQuad(this._progShade);

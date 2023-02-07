@@ -1,4 +1,5 @@
 #version 100
+#extension GL_EXT_draw_buffers: enable
 
 precision highp float;
 
@@ -29,5 +30,5 @@ void main() {
     }
   }
   
-  gl_FragData[0] = vec4(blur_color, 1.0);
+  gl_FragData[1] = vec4(blur_color, 1.0);
 }
