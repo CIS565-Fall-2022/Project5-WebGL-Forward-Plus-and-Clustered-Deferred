@@ -1,6 +1,5 @@
 import TextureBuffer from './textureBuffer';
-import {subFrustumSphereIntersectTest} from '../helpers'
-import { PerspectiveCamera, Vector3 } from 'three';
+import { Vector3 } from 'three';
 import { NUM_LIGHTS, FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH } from '../scene';
 
 export const MAX_LIGHTS_PER_CLUSTER = NUM_LIGHTS;
