@@ -23,6 +23,8 @@ export default class ForwardPlusRenderer extends BaseRenderer {
       zSlices: zSlices,
       frustumNearDepth: FRUSTUM_NEAR_DEPTH,
       frustumFarDepth: FRUSTUM_FAR_DEPTH,
+      textureWidth: this._clusterTexture._elementCount,
+      textureHeight: this._clusterTexture._pixelsPerElement,
     }), {
       uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_lightbuffer', 'u_clusterbuffer', 'u_screenSize', 'u_viewMat'],
       attribs: ['a_position', 'a_normal', 'a_uv'],

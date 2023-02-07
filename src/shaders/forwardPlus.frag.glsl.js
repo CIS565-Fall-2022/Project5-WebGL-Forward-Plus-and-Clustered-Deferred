@@ -10,6 +10,8 @@ export default function(params) {
   #define X_SLICES ${params.xSlices.toFixed(20)}
   #define Y_SLICES ${params.ySlices.toFixed(20)}
   #define Z_SLICES ${params.zSlices.toFixed(20)}
+  #define TEXTURE_WIDTH ${params.textureWidth}
+  #define TEXTURE_HEIGHT ${params.textureHeight}
   #define FRUSTUM_NEAR_DEPTH ${params.frustumNearDepth.toFixed(20)}
   #define FRUSTUM_FAR_DEPTH ${params.frustumFarDepth.toFixed(20)}
 
@@ -106,16 +108,14 @@ export default function(params) {
       / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH), 0.0, Z_SLICES - 1.0));
 
     int cluster_idx = int(cluster_x + cluster_y * X_SLICES + cluster_z * X_SLICES * Y_SLICES);
-    int texture_width = int(X_SLICES * Y_SLICES * Z_SLICES);
-    int texture_height = int(MAX_LIGHTS_PER_CLUSTER + 1);
-    int num_lights_in_cluster = int(ExtractFloat(u_clusterbuffer, texture_width, texture_height, cluster_idx, 0));
+    int num_lights_in_cluster = int(ExtractFloat(u_clusterbuffer, TEXTURE_WIDTH, TEXTURE_HEIGHT, cluster_idx, 0));
 
-    for (int i = 1; i <= MAX_LIGHTS_PER_CLUSTER + 1; ++i) {
+    for (int i = 1; i < MAX_LIGHTS_PER_CLUSTER + 1; ++i) {
       if (i > num_lights_in_cluster) {
         break;
       }
 
-      int light_idx = int(ExtractFloat(u_clusterbuffer, texture_width, texture_height, cluster_idx, i));
+      int light_idx = int(ExtractFloat(u_clusterbuffer, TEXTURE_WIDTH, TEXTURE_HEIGHT, cluster_idx, i));
 
       Light light = UnpackLight(light_idx);
       float lightDistance = distance(light.position, v_position);
@@ -133,9 +133,9 @@ export default function(params) {
     gl_FragColor = vec4(fragColor, 1.0);
     // gl_FragColor = vec4(0.0, 0.0, depth / 15.0, 1.0);
     // gl_FragColor = vec4(cluster_x / 15.0, cluster_y / 15.0, cluster_z / 15.0, 1.0);
-    // if (num_lights_in_cluster == 0) {
-    //   gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-    // }
+
+    // float num_lights = float(num_lights_in_cluster);
+    // gl_FragColor = vec4(num_lights / 5.0, 0.0, 0.0, 1.0);
   }
   `;
 }
