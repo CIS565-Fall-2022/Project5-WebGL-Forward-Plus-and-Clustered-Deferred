@@ -136,6 +136,8 @@ export default function(params) {
 
     // float num_lights = float(num_lights_in_cluster);
     // gl_FragColor = vec4(num_lights / 5.0, 0.0, 0.0, 1.0);
+
+    // gl_FragColor = vec4(v_position, 1.0) / 15.0;
   }
   `;
 }

@@ -20,6 +20,8 @@ Additional features:
 ### Live Online
 [https://conswang.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred/](https://conswang.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred/)
 
+Note: had to use 'copy-webpack-plugin' to copy the entire models folder into the build folder, as webpack can't really detect files referenced by gltf files.
+
 [![](img/thumb.png)](http://TODO.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred)
 
 ### Demo
@@ -42,6 +44,12 @@ I added a bloom filter effect to the clustered deferred shader - set `SHOW_BLOOM
 
 ### G-Buffer Optimizations
 Todo
+
+### Oops
+c o l o u r   s y n t h (wrong position buffer)  
+![](images/goodaesthetic.gif)
+
+[and many more here (´。＿。｀)](https://docs.google.com/document/d/1BJmclri4VJY_IXbsLU8Er_CQihQnfmzTQRi5cz9FthM/edit#heading=h.xsr527b9gzdk)
 
 ### Credits
 

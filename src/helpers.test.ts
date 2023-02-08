@@ -1,5 +1,5 @@
 import { PerspectiveCamera, Vector3 } from "three";
-import {getCorners, getPlaneNormalsOfSubFrustum, vec3Sub, vec3Neg, subFrustumSphereIntersectTest} from "./helpers";
+import {getCorners, getPlaneNormalsOfSubFrustum, vec3Sub, vec3Neg, subFrustumSphereIntersectTest} from "./helpers_DEPRECATED";
 
 const EPSILON = 0.01;
 
