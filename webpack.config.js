@@ -2,6 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MinifyPlugin = require('terser-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = function(env, argv) {
   const isProduction = argv.mode && argv.mode === 'production';
@@ -10,7 +11,7 @@ module.exports = function(env, argv) {
     context: __dirname,
     entry: path.join(__dirname, 'src/init'),
     output: {
-      path: path.join(__dirname, 'build'),
+      path: path.join(__dirname, 'docs'),
       filename: 'bundle.js',
     },
     module: {
@@ -32,6 +33,11 @@ module.exports = function(env, argv) {
           },
         },
         {
+          test: /\.ts?$/,
+          use: 'ts-loader',
+          exclude: /node_modules/,
+        },
+        {
           test: /\.glsl$/,
           use: 'webpack-glsl-loader'
         },
@@ -51,7 +57,12 @@ module.exports = function(env, argv) {
       }),
       new HtmlWebpackPlugin({
         template: "./index.html"
-      })
+      }),
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: 'models', to: 'models' }
+        ]
+      }),
     ].filter(p => p),
     performance: {
         hints: false,
@@ -66,5 +77,8 @@ module.exports = function(env, argv) {
         publicPath: '/models',
       },
     },
+    resolve: {
+      extensions: ['.ts', '.js'],
+    }
   };
 };

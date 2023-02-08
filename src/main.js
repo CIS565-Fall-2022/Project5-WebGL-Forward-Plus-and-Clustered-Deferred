@@ -10,7 +10,7 @@ const FORWARD_PLUS = 'Forward+';
 const CLUSTERED = 'Clustered Deferred';
 
 const params = {
-  renderer: FORWARD_PLUS,
+  renderer: CLUSTERED,
   _renderer: null,
 };
 
@@ -33,7 +33,7 @@ function setRenderer(renderer) {
 gui.add(params, 'renderer', [FORWARD, FORWARD_PLUS, CLUSTERED]).onChange(setRenderer);
 
 const scene = new Scene();
-scene.loadGLTF('models/sponza/sponza.gltf');
+scene.loadGLTF('./models/sponza/sponza.gltf');
 
 // LOOK: The Wireframe class is for debugging.
 // It lets you draw arbitrary lines in the scene.
@@ -59,9 +59,9 @@ function render() {
   // If you would like the wireframe to render behind and in front
   // of objects based on relative depths in the scene, comment out /
   //the gl.disable(gl.DEPTH_TEST) and gl.enable(gl.DEPTH_TEST) lines.
-  gl.disable(gl.DEPTH_TEST);
-  wireframe.render(camera);
-  gl.enable(gl.DEPTH_TEST);
+  // gl.disable(gl.DEPTH_TEST);
+  // wireframe.render(camera);
+  // gl.enable(gl.DEPTH_TEST);
 }
 
 makeRenderLoop(render)();

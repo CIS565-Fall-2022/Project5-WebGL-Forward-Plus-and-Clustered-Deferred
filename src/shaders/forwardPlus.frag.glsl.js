@@ -1,8 +1,20 @@
+const glsl = String.raw;
+
 export default function(params) {
-  return `
-  // TODO: This is pretty much just a clone of forward.frag.glsl.js
+  return glsl`
 
   #version 100
+  // replace the string interpolation with a number for VScode glsl linting extension to work
+  #define NUM_LIGHTS ${params.numLights}
+  #define MAX_LIGHTS_PER_CLUSTER ${params.maxLightsPerCluster}
+  #define X_SLICES ${params.xSlices.toFixed(20)}
+  #define Y_SLICES ${params.ySlices.toFixed(20)}
+  #define Z_SLICES ${params.zSlices.toFixed(20)}
+  #define TEXTURE_WIDTH ${params.textureWidth}
+  #define TEXTURE_HEIGHT ${params.textureHeight}
+  #define FRUSTUM_NEAR_DEPTH ${params.frustumNearDepth.toFixed(20)}
+  #define FRUSTUM_FAR_DEPTH ${params.frustumFarDepth.toFixed(20)}
+
   precision highp float;
 
   uniform sampler2D u_colmap;
@@ -11,6 +23,9 @@ export default function(params) {
 
   // TODO: Read this buffer to determine the lights influencing a cluster
   uniform sampler2D u_clusterbuffer;
+
+  uniform vec2 u_screenSize;
+  uniform mat4 u_viewMat; // for depth
 
   varying vec3 v_position;
   varying vec3 v_normal;
@@ -49,7 +64,7 @@ export default function(params) {
 
   Light UnpackLight(int index) {
     Light light;
-    float u = float(index + 1) / float(${params.numLights + 1});
+    float u = float(index + 1) / float(NUM_LIGHTS + 1);
     vec4 v1 = texture2D(u_lightbuffer, vec2(u, 0.3));
     vec4 v2 = texture2D(u_lightbuffer, vec2(u, 0.6));
     light.position = v1.xyz;
@@ -57,7 +72,7 @@ export default function(params) {
     // LOOK: This extracts the 4th float (radius) of the (index)th light in the buffer
     // Note that this is just an example implementation to extract one float.
     // There are more efficient ways if you need adjacent values
-    light.radius = ExtractFloat(u_lightbuffer, ${params.numLights}, 2, index, 3);
+    light.radius = ExtractFloat(u_lightbuffer, NUM_LIGHTS, 2, index, 3);
 
     light.color = v2.rgb;
     return light;
@@ -81,8 +96,28 @@ export default function(params) {
 
     vec3 fragColor = vec3(0.0);
 
-    for (int i = 0; i < ${params.numLights}; ++i) {
-      Light light = UnpackLight(i);
+    // about gl_FragCoord: xy coordinates are literally array index if image is pixel array
+    // default origin is at bottom left
+    // Getting tile coordinate: get tile xy based on pixel position -> (0, screen_x or y) to (0, 15)
+    // get z coordinate based on depth taking tile near/far clip distances into account -> (1, 1000) to (0, 15)
+    float cluster_x = floor(gl_FragCoord.x * X_SLICES / u_screenSize.x);
+    float cluster_y = floor(gl_FragCoord.y * Y_SLICES / u_screenSize.y);
+    // float depth = gl_FragCoord.z / gl_FragCoord.w;
+    float depth = -(u_viewMat * vec4(v_position, 1.0)).z;    // positive depth away from camera
+    float cluster_z = floor(clamp((depth - FRUSTUM_NEAR_DEPTH) * Z_SLICES
+      / (FRUSTUM_FAR_DEPTH - FRUSTUM_NEAR_DEPTH), 0.0, Z_SLICES - 1.0));
+
+    int cluster_idx = int(cluster_x + cluster_y * X_SLICES + cluster_z * X_SLICES * Y_SLICES);
+    int num_lights_in_cluster = int(ExtractFloat(u_clusterbuffer, TEXTURE_WIDTH, TEXTURE_HEIGHT, cluster_idx, 0));
+
+    for (int i = 1; i < MAX_LIGHTS_PER_CLUSTER + 1; ++i) {
+      if (i > num_lights_in_cluster) {
+        break;
+      }
+
+      int light_idx = int(ExtractFloat(u_clusterbuffer, TEXTURE_WIDTH, TEXTURE_HEIGHT, cluster_idx, i));
+
+      Light light = UnpackLight(light_idx);
       float lightDistance = distance(light.position, v_position);
       vec3 L = (light.position - v_position) / lightDistance;
 
@@ -96,6 +131,13 @@ export default function(params) {
     fragColor += albedo * ambientLight;
 
     gl_FragColor = vec4(fragColor, 1.0);
+    // gl_FragColor = vec4(0.0, 0.0, depth / 15.0, 1.0);
+    // gl_FragColor = vec4(cluster_x / 15.0, cluster_y / 15.0, cluster_z / 15.0, 1.0);
+
+    // float num_lights = float(num_lights_in_cluster);
+    // gl_FragColor = vec4(num_lights / 5.0, 0.0, 0.0, 1.0);
+
+    // gl_FragColor = vec4(v_position, 1.0) / 15.0;
   }
   `;
 }

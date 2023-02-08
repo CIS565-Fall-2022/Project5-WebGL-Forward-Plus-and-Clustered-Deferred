@@ -5,7 +5,12 @@ import { gl } from './init';
 export const LIGHT_MIN = [-14, 0, -6];
 export const LIGHT_MAX = [14, 20, 6];
 export const LIGHT_RADIUS = 5.0;
-export const LIGHT_DT = -0.03;
+export const LIGHT_DT = -0.03; // how fast lights move (with same frame rate)
+
+// not necessarily equal to camera near and far clip planes
+// for grouping light clusters
+export const FRUSTUM_NEAR_DEPTH = 1.0;
+export const FRUSTUM_FAR_DEPTH = 300.0;
 
 // TODO: This controls the number of lights
 export const NUM_LIGHTS = 100;
