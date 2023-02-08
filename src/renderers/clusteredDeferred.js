@@ -28,8 +28,7 @@ export const GAUSSIAN_KERNEL_11 = new Float32Array([
 
 export const SHOW_BLOOM = true;
 
- // bloom needs 2 extra textures for writing 1) rendered image and 2) blurred image
-export const NUM_GBUFFERS = SHOW_BLOOM ? 5 : 3;
+export const NUM_GBUFFERS = 3;
 
 export default class ClusteredDeferredRenderer extends BaseRenderer {
   constructor(xSlices, ySlices, zSlices) {
@@ -61,22 +60,48 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     }), {
       uniforms: ['u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
         'u_screenSize', 'u_viewMat', 'u_clusterbuffer', 'u_lightbuffer'],
-      attribs: ['a_position'],
+      attribs: ['a_position', 'a_uv'],
     });
 
     this._progBloomGaussian = loadShaderProgram(QuadVertSource, bloomGaussianSource, {
       uniforms: ['u_brightBuffer', 'u_screenSize', 'u_gaussianKernel'],
-      attribs: ['a_position'],
+      attribs: ['a_position', 'a_uv'],
     });
 
     this._progBloomFinal = loadShaderProgram(QuadVertSource, bloomFinalSource, {
       uniforms: ['u_blurBuffer', 'u_renderBuffer'],
-      attribs: ['a_position'],
+      attribs: ['a_position', 'a_uv'],
     });
 
     this._projectionMatrix = mat4.create();
     this._viewMatrix = mat4.create();
     this._viewProjectionMatrix = mat4.create();
+  }
+
+  setupMultipleRenderTargets(buffers, num) {
+    let attachments = new Array(NUM_GBUFFERS);
+
+    for (let i = 0; i < num; i++) {
+      attachments[i] = WEBGL_draw_buffers[`COLOR_ATTACHMENT${i}_WEBGL`];
+      buffers[i] = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, buffers[i]);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._width, this._height, 0, gl.RGBA, gl.FLOAT, null);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, attachments[i], gl.TEXTURE_2D, buffers[i], 0);      
+    }
+
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+      throw "Framebuffer incomplete";
+    }
+
+    // Tell the WEBGL_draw_buffers extension which FBO attachments are
+    // being used. (This extension allows for multiple render targets.)
+    WEBGL_draw_buffers.drawBuffersWEBGL(attachments);
   }
 
   setupDrawBuffers(width, height) {
@@ -100,28 +125,35 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
 
     // Create, bind, and store "color" target textures for the FBO
     this._gbuffers = new Array(NUM_GBUFFERS);
-    let attachments = new Array(NUM_GBUFFERS);
-    for (let i = 0; i < NUM_GBUFFERS; i++) {
-      attachments[i] = WEBGL_draw_buffers[`COLOR_ATTACHMENT${i}_WEBGL`];
-      this._gbuffers[i] = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, this._gbuffers[i]);
+    this.setupMultipleRenderTargets(this._gbuffers, NUM_GBUFFERS);
+
+    if (SHOW_BLOOM) {
+      // Create a frame buffer for 2 outputs: 1) rendered image and 2) image to blur
+      this._bloomFbo = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this._bloomFbo);
+
+      this._bloomBuffers = new Array(2);
+      this.setupMultipleRenderTargets(this._bloomBuffers, 2);
+
+      // Create another frame buffer for just 1 output: gaussian blurred image
+      this._bloomBlurFbo = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this._bloomBlurFbo);
+
+      this._bloomBlurBuffer = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, this._bloomBlurBuffer);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.FLOAT, null);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._width, this._height, 0, gl.RGBA, gl.FLOAT, null);
       gl.bindTexture(gl.TEXTURE_2D, null);
 
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, attachments[i], gl.TEXTURE_2D, this._gbuffers[i], 0);      
-    }
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._bloomBlurBuffer, 0);    
 
-    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
-      throw "Framebuffer incomplete";
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+        throw "Bloom 2st framebuffer incomplete";
+      }
     }
-
-    // Tell the WEBGL_draw_buffers extension which FBO attachments are
-    // being used. (This extension allows for multiple render targets.)
-    WEBGL_draw_buffers.drawBuffersWEBGL(attachments);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
@@ -185,7 +217,10 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     // Update the clusters for the frame
     this.updateClusters(camera, this._viewMatrix, scene);
 
-    if (!SHOW_BLOOM) {
+    if (SHOW_BLOOM) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this._bloomFbo);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    } else {
       // Bind the default null framebuffer which is the screen
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       // Clear the frame
@@ -218,15 +253,22 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     gl.uniform1i(this._progShade.u_clusterbuffer, NUM_GBUFFERS + 1);
 
     if (SHOW_BLOOM) {
+      renderFullscreenQuad(this._progShade);
+
       // Gaussian blur for bloom
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this._bloomBlurFbo);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
       gl.useProgram(this._progBloomGaussian.glShaderProgram);
 
-      gl.activeTexture(gl[`TEXTURE3`]);
-      gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
-      gl.uniform1i(this._progBloomGaussian.u_brightBuffer, 3);
+      gl.activeTexture(gl[`TEXTURE0`]);
+      gl.bindTexture(gl.TEXTURE_2D, this._bloomBuffers[1]);
+      gl.uniform1i(this._progBloomGaussian.u_brightBuffer, 0);
 
       gl.uniform2f(this._progBloomGaussian.u_screenSize, gl.canvas.width, gl.canvas.height);
       gl.uniform1fv(this._progBloomGaussian.u_gaussianKernel, GAUSSIAN_KERNEL_11);
+
+      renderFullscreenQuad(this._progBloomGaussian);
 
       // Bind the default null framebuffer which is the screen
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -235,13 +277,13 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       // Combine gaussian blur + rendered image
       gl.useProgram(this._progBloomFinal.glShaderProgram);
 
-      gl.activeTexture(gl[`TEXTURE3`]);
-      gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
-      gl.uniform1i(this._progBloomFinal.u_renderBuffer, 3);
+      gl.activeTexture(gl[`TEXTURE0`]);
+      gl.bindTexture(gl.TEXTURE_2D, this._bloomBuffers[0]);
+      gl.uniform1i(this._progBloomFinal.u_renderBuffer, 0);
 
-      gl.activeTexture(gl[`TEXTURE4`]);
-      gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
-      gl.uniform1i(this._progBloomFinal.u_blurBuffer, 4);
+      gl.activeTexture(gl[`TEXTURE1`]);
+      gl.bindTexture(gl.TEXTURE_2D, this._bloomBlurBuffer);
+      gl.uniform1i(this._progBloomFinal.u_blurBuffer, 1);
 
       renderFullscreenQuad(this._progBloomFinal);
 
