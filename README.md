@@ -22,7 +22,7 @@ Additional features:
 [![](img/thumb.png)](http://TODO.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred)
 
 ### Demo
-![](images/bloom.gif)
+![](images/bloom.gif)  
 [full video here](images/sponza-bloom.mp4)
 
 ### Performance
@@ -31,9 +31,13 @@ Todo
 ### Bloom Filter
 I added a bloom filter effect to the clustered deferred shader - set `SHOW_BLOOM` in `clusteredDeferred.js` to toggle the feature. After the deferred render pass, we write to two render targets: the rendered texture, and a "bright" texture which only contains pixels above a certain brightness threshold. The bright texture is then Gaussian blurred in a second fragment shader and added to the rendered texture to create an effect of light bleeding through edges.
 
-| Render texture | Bright texture | Gaussian blur | Final result |
-| --- | ----| --- | --- |
-|![](images/bloom-render.png) | ![](images/bloom-bright.png) | ![](images/bloom-blur.png) | ![](images/bloom-result.png) |
+| Bright texture | Gaussian blur | 
+| --- | ----|
+ ![](images/bloom-bright.png) | ![](images/bloom-blur.png) | 
+
+| Render texture | Final result |
+| --- | ----|
+|![](images/bloom-render.png) | ![](images/bloom-result.png) | 
 
 ### G-Buffer Optimizations
 Todo
