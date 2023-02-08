@@ -18,6 +18,7 @@ Additional features:
 - G-buffer optimizations: 8-bit RGB buffer and reconstructing position from depth
 
 ### Live Online
+[https://conswang.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred/](https://conswang.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred/)
 
 [![](img/thumb.png)](http://TODO.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred)
 
