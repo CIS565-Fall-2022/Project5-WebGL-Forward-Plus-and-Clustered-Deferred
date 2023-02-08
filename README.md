@@ -15,7 +15,7 @@ This project implements two optimized rendering methods for scenes with a large 
 
 Additional features:
 - Bloom filter using two post-process passes
-- G-buffer optimizations: 8-bit RGB buffer and reconstructing position from depth
+- G-buffer optimizations: reconstruct position from depth and pack values into vec4
 
 ### Live Online
 [https://conswang.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred/](https://conswang.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred/)
