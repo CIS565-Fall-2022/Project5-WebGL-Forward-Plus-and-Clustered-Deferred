@@ -12,8 +12,6 @@ import bloomFinalSource from '../shaders/deferredBloomFinal.frag.glsl';
 import TextureBuffer from './textureBuffer';
 import BaseRenderer, {MAX_LIGHTS_PER_CLUSTER} from './base';
 
-export const NUM_GBUFFERS = 4;
-
 export const GAUSSIAN_KERNEL_11 = new Float32Array([
   0.006849,	0.007239,	0.007559,	0.007795,	0.007941,	0.00799 ,       0.007941,	0.007795,	0.007559,	0.007239,	0.006849,
   0.007239,	0.007653,	0.00799 ,        0.00824,       0.008394,	0.008446,	0.008394,	0.00824 ,        0.00799,       0.007653,	0.007239,
@@ -29,6 +27,9 @@ export const GAUSSIAN_KERNEL_11 = new Float32Array([
 ]);
 
 export const SHOW_BLOOM = true;
+
+ // bloom needs 2 extra textures for writing 1) rendered image and 2) blurred image
+export const NUM_GBUFFERS = SHOW_BLOOM ? 5 : 3;
 
 export default class ClusteredDeferredRenderer extends BaseRenderer {
   constructor(xSlices, ySlices, zSlices) {
@@ -60,17 +61,17 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     }), {
       uniforms: ['u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
         'u_screenSize', 'u_viewMat', 'u_clusterbuffer', 'u_lightbuffer'],
-      attribs: ['a_uv'],
+      attribs: ['a_position'],
     });
 
     this._progBloomGaussian = loadShaderProgram(QuadVertSource, bloomGaussianSource, {
       uniforms: ['u_brightBuffer', 'u_screenSize', 'u_gaussianKernel'],
-      attribs: ['a_uv'],
+      attribs: ['a_position'],
     });
 
     this._progBloomFinal = loadShaderProgram(QuadVertSource, bloomFinalSource, {
       uniforms: ['u_blurBuffer', 'u_renderBuffer'],
-      attribs: ['a_uv'],
+      attribs: ['a_position'],
     });
 
     this._projectionMatrix = mat4.create();
@@ -184,11 +185,12 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     // Update the clusters for the frame
     this.updateClusters(camera, this._viewMatrix, scene);
 
-    // Bind the default null framebuffer which is the screen
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-    // Clear the frame
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    if (!SHOW_BLOOM) {
+      // Bind the default null framebuffer which is the screen
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      // Clear the frame
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    }
 
     // Use this shader program
     gl.useProgram(this._progShade.glShaderProgram);
@@ -219,23 +221,27 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       // Gaussian blur for bloom
       gl.useProgram(this._progBloomGaussian.glShaderProgram);
 
-      gl.activeTexture(gl[`TEXTURE1`]);
+      gl.activeTexture(gl[`TEXTURE3`]);
       gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
-      gl.uniform1i(this._progBloomGaussian.u_brightBuffer, 1);
+      gl.uniform1i(this._progBloomGaussian.u_brightBuffer, 3);
 
       gl.uniform2f(this._progBloomGaussian.u_screenSize, gl.canvas.width, gl.canvas.height);
       gl.uniform1fv(this._progBloomGaussian.u_gaussianKernel, GAUSSIAN_KERNEL_11);
 
+      // Bind the default null framebuffer which is the screen
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.clear(gl.COLOR_BUFFER_BIT| gl.DEPTH_BUFFER_BIT);
+
       // Combine gaussian blur + rendered image
       gl.useProgram(this._progBloomFinal.glShaderProgram);
 
-      gl.activeTexture(gl[`TEXTURE0`]);
+      gl.activeTexture(gl[`TEXTURE3`]);
       gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
-      gl.uniform1i(this._progBloomFinal.u_renderBuffer, 0);
+      gl.uniform1i(this._progBloomFinal.u_renderBuffer, 3);
 
-      gl.activeTexture(gl[`TEXTURE1`]);
+      gl.activeTexture(gl[`TEXTURE4`]);
       gl.bindTexture(gl.TEXTURE_2D, this._clusterTexture.glTexture);
-      gl.uniform1i(this._progBloomFinal.u_blurBuffer, 1);
+      gl.uniform1i(this._progBloomFinal.u_blurBuffer, 4);
 
       renderFullscreenQuad(this._progBloomFinal);
 
