@@ -9,24 +9,34 @@ Constance Wang
 Tested on AORUS 15P XD laptop with specs:  
 - Windows 11 22000.856  
 - 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz 2.30 GHz  
-- NVIDIA GeForce RTX 3070 Laptop GPU  
+- NVIDIA GeForce RTX 3070 Laptop GPU
+
+This project implements two optimized rendering methods for scenes with a large number of lights: 1) Forward+ rendering which uses clustering to optimize the search for lights that contribute a noticeable effect to each pixel and 2) Clustered Deferred rendering which implements the clustering method from Forward+ in a deferred shader. The first optimization makes the lighting calculations less expensive, and the second optimization reduces the number of lighting calculations needed down to 1 per pixel.
+
+Additional features:
+- Bloom filter using two post-process passes
+- G-buffer optimizations: 8-bit RGB buffer and reconstructing position from depth
 
 ### Live Online
 
 [![](img/thumb.png)](http://TODO.github.io/Project5-WebGL-Forward-Plus-and-Clustered-Deferred)
 
-### Demo Video/GIF
+### Demo
+![](images/bloom.gif)
+[full video here](images/sponza-bloom.mp4)
 
-[![](img/video.png)](TODO)
+### Performance
+Todo
 
-### (TODO: Your README)
+### Bloom Filter
+I added a bloom filter effect to the clustered deferred shader - set `SHOW_BLOOM` in `clusteredDeferred.js` to toggle the feature. After the deferred render pass, we write to two render targets: the rendered texture, and a "bright" texture which only contains pixels above a certain brightness threshold. The bright texture is then Gaussian blurred in a second fragment shader and added to the rendered texture to create an effect of light bleeding through edges.
 
-*DO NOT* leave the README to the last minute! It is a crucial part of the
-project, and we will not be able to grade you without a good README.
+| Render texture | Bright texture | Gaussian blur | Final result |
+| --- | ----| --- | --- |
+|![](images/bloom-render.png) | ![](images/bloom-bright.png) | ![](images/bloom-blur.png) | ![](images/bloom-result.png) |
 
-This assignment has a considerable amount of performance analysis compared
-to implementation work. Complete the implementation early to leave time!
-
+### G-Buffer Optimizations
+Todo
 
 ### Credits
 

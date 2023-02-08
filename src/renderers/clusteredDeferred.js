@@ -28,9 +28,9 @@ export const GAUSSIAN_KERNEL_11 = new Float32Array([
   0.006849,	0.007239,	0.007559,	0.007795,	0.007941,	0.00799 ,       0.007941,	0.007795,	0.007559,	0.007239,	0.006849
 ]);
 
-export const SHOW_BLOOM = false;
+export const SHOW_BLOOM = true;
 // Only set one of these perf optimizations to true if show_bloom is false
-export const G_BUFFER_NO_POSITION = true;
+export const G_BUFFER_NO_POSITION = false;
 
 export const NUM_GBUFFERS = G_BUFFER_NO_POSITION ? 2 : 3;
 
@@ -256,7 +256,7 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     gl.uniformMatrix4fv(this._progShade.u_viewInv, false, camera.matrixWorld.elements);
     gl.uniform1f(this._progShade.u_fov, camera.fov * Math.PI / 180);
 
-    console.log(camera.matrixWorld.elements);
+    // console.log(camera.matrixWorld.elements);
   
     // Bind g-buffers
     const firstGBufferBinding = 0; // You may have to change this if you use other texture slots
