@@ -86,7 +86,7 @@ export default function(params) {
     float depth = colorAndDepth.a;
     
     // center position is camera eye (4th column) + depth * forward vector (3rd column)
-    vec3 position_of_center = u_viewInv[3].xyz + depth * normalize(u_viewInv[2].xyz);
+    vec3 position_of_center = u_viewInv[3].xyz - depth * normalize(u_viewInv[2].xyz);
     vec2 ndc = 2.0 * gl_FragCoord.xy / u_screenSize - vec2(1.0);
     float half_height = depth * tan(u_fov / 2.0);
     float half_width = half_height * u_screenSize.x / u_screenSize.y;

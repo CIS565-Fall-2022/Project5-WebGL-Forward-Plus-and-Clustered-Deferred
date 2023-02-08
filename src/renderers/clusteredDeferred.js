@@ -28,9 +28,9 @@ export const GAUSSIAN_KERNEL_11 = new Float32Array([
   0.006849,	0.007239,	0.007559,	0.007795,	0.007941,	0.00799 ,       0.007941,	0.007795,	0.007559,	0.007239,	0.006849
 ]);
 
-export const SHOW_BLOOM = true;
+export const SHOW_BLOOM = false;
 // Only set one of these perf optimizations to true if show_bloom is false
-export const G_BUFFER_NO_POSITION = false;
+export const G_BUFFER_NO_POSITION = true;
 
 export const NUM_GBUFFERS = G_BUFFER_NO_POSITION ? 2 : 3;
 
