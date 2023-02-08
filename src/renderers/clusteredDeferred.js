@@ -4,8 +4,10 @@ import { loadShaderProgram, renderFullscreenQuad } from '../utils';
 import { NUM_LIGHTS, FRUSTUM_NEAR_DEPTH, FRUSTUM_FAR_DEPTH } from '../scene';
 import toTextureVert from '../shaders/deferredToTexture.vert.glsl';
 import toTextureFrag from '../shaders/deferredToTexture.frag.glsl';
+import toTextureFragNoPosition from '../shaders/deferredToTextureNoPosition.frag.glsl';
 import QuadVertSource from '../shaders/quad.vert.glsl';
 import deferredFsSource from '../shaders/deferred.frag.glsl.js';
+import deferredFsNoPositionSource from '../shaders/deferredNoPosition.frag.glsl.js';
 import bloomFsSource from '../shaders/deferredBloom.frag.glsl.js';
 import bloomGaussianSource from '../shaders/deferredBloomGaussian.frag.glsl';
 import bloomFinalSource from '../shaders/deferredBloomFinal.frag.glsl';
@@ -26,9 +28,11 @@ export const GAUSSIAN_KERNEL_11 = new Float32Array([
   0.006849,	0.007239,	0.007559,	0.007795,	0.007941,	0.00799 ,       0.007941,	0.007795,	0.007559,	0.007239,	0.006849
 ]);
 
-export const SHOW_BLOOM = true;
+export const SHOW_BLOOM = false;
+// Only set one of these perf optimizations to true if show_bloom is false
+export const G_BUFFER_NO_POSITION = true;
 
-export const NUM_GBUFFERS = 3;
+export const NUM_GBUFFERS = G_BUFFER_NO_POSITION ? 2 : 3;
 
 export default class ClusteredDeferredRenderer extends BaseRenderer {
   constructor(xSlices, ySlices, zSlices) {
@@ -38,13 +42,16 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
     
     // Create a texture to store light data
     this._lightTexture = new TextureBuffer(NUM_LIGHTS, 8);
+
+    const progCopyFragSource = G_BUFFER_NO_POSITION ? toTextureFragNoPosition : toTextureFrag;
     
-    this._progCopy = loadShaderProgram(toTextureVert, toTextureFrag, {
-      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap'],
+    this._progCopy = loadShaderProgram(toTextureVert, progCopyFragSource, {
+      uniforms: ['u_viewProjectionMatrix', 'u_colmap', 'u_normap', 'u_viewMat'],
       attribs: ['a_position', 'a_normal', 'a_uv'],
     });
 
-    const fsSource = SHOW_BLOOM ? bloomFsSource : deferredFsSource;
+    const fsSource = SHOW_BLOOM ? bloomFsSource
+      : G_BUFFER_NO_POSITION ? deferredFsNoPositionSource : deferredFsSource;
 
     this._progShade = loadShaderProgram(QuadVertSource, fsSource({
       numLights: NUM_LIGHTS,
@@ -59,7 +66,7 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       textureHeight: this._clusterTexture._pixelsPerElement,
     }), {
       uniforms: ['u_gbuffers[0]', 'u_gbuffers[1]', 'u_gbuffers[2]', 'u_gbuffers[3]',
-        'u_screenSize', 'u_viewMat', 'u_clusterbuffer', 'u_lightbuffer'],
+        'u_screenSize', 'u_viewMat', 'u_clusterbuffer', 'u_lightbuffer', 'u_fov', 'u_viewInv'],
       attribs: ['a_position', 'a_uv'],
     });
 
@@ -168,6 +175,19 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
       gl.bindTexture(gl.TEXTURE_2D, this._gbuffers[i]);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.FLOAT, null);
     }
+
+    if (SHOW_BLOOM) {
+      // resize the post process texture buffers as well
+      gl.bindTexture(gl.TEXTURE_2D, this._bloomBuffers[0]);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.FLOAT, null);
+
+      gl.bindTexture(gl.TEXTURE_2D, this._bloomBuffers[1]);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.FLOAT, null);
+
+      gl.bindTexture(gl.TEXTURE_2D, this._bloomBlurBuffer);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.FLOAT, null);
+    }
+
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
@@ -196,6 +216,7 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
 
     // Upload the camera matrix
     gl.uniformMatrix4fv(this._progCopy.u_viewProjectionMatrix, false, this._viewProjectionMatrix);
+    gl.uniformMatrix4fv(this._progCopy.u_viewMat, false, this._viewMatrix);
 
     // Draw the scene. This function takes the shader program so that the model's textures can be bound to the right inputs
     scene.draw(this._progCopy);
@@ -232,7 +253,10 @@ export default class ClusteredDeferredRenderer extends BaseRenderer {
 
     // TODO: Bind any other shader inputs
     gl.uniform2f(this._progShade.u_screenSize, gl.canvas.width, gl.canvas.height);
-    gl.uniformMatrix4fv(this._progShade.u_viewMat, false, this._viewMatrix);
+    gl.uniformMatrix4fv(this._progShade.u_viewInv, false, camera.matrixWorld.elements);
+    gl.uniform1f(this._progShade.u_fov, camera.fov * Math.PI / 180);
+
+    console.log(camera.matrixWorld.elements);
   
     // Bind g-buffers
     const firstGBufferBinding = 0; // You may have to change this if you use other texture slots
