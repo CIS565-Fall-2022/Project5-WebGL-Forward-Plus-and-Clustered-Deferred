@@ -128,7 +128,7 @@ export default function(params) {
 
     // reference: https://learnopengl.com/Advanced-Lighting/Bloom
     gl_FragData[0] = vec4(fragColor, 1.0);
-    float brightness = dot(fragColor, vec3(0.7, 0.7, 0.7));
+    float brightness = dot(fragColor, vec3(0.8, 0.8, 0.8));
     if(brightness > 1.0) {
       gl_FragData[1] = vec4(fragColor, 1.0);
     } else {
